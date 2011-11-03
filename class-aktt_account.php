@@ -71,8 +71,7 @@ class AKTT_Account {
 		if (
 			is_null($acct)
 			|| !is_object($acct) // Ensure we have an account object
-			|| !isset(Social::$combined_services['twitter']) // Ensure we have twitter as a service
-			|| !is_a(Social::$combined_services['twitter'], 'Social_Twitter') // Ensure we have a Social_Twitter object
+			|| !is_a($acct, 'Social_Service_Twitter_Account') // Ensure we have a Social_Twitter object
 			) {
 			return false;
 		}
@@ -82,20 +81,21 @@ class AKTT_Account {
 	}
 	
 	function __construct($acct = null) {
+
 		// Set our ID
-		$this->id = $acct->user->id;
+		$this->id = $acct->id();
 		
 		// Set the account (stdClass Obj)
 		$this->social_acct = $acct;
 		
 		// For convenience, set a reference to the service which has all the account methods
-		$this->service = &Social::$combined_services['twitter'];
+		$this->service = &Social::instance()->service('twitter');
 		
 	}
 	
 	function output_account_config() {
-		$name = $this->service->profile_name($this->social_acct);
-		$avatar = $this->service->profile_avatar($this->social_acct);
+		$name = $this->social_acct->name();
+		$avatar = $this->social_acct->avatar();
 		$img = empty($avatar) ? '' : '<img class="avatar" src="'.esc_url($avatar).'" />';
 		?>
 		<li class="aktt_acct_item">
@@ -220,13 +220,8 @@ class AKTT_Account {
 			'count' => apply_filters('aktt_account_api_download_count', 20) // default to twitter's default 
 		));
 		
-		// If it was successful, store the tweets to the account
-		if (
-			$request->result == 'success' 
-			&& isset($request->response) 
-			&& is_array($request->response) 
-			&& count($request->response)
-			) {
+		if ($request->result == 'success' && isset($request->response) 
+			&& is_array($request->response) && count($request->response)) {
 			return $request->response;
 		}
 		return false;
@@ -240,32 +235,32 @@ class AKTT_Account {
 	 * @return int - number of tweets saved
 	 */
 	function save_tweets($tweets) {
+// strip out any tweets we already have
+		$tweet_guids = array();
+		foreach ($tweets as $tweet) {
+			$tweet_guids[] = AKTT_Tweet::guid_from_twid($tweet->id);
+		}
+
+print_r($tweet_guids); die();
+
 		// Set the args for any blog posts created
 		$post_tweet_args = array(
-			'post_author' 	=> $this->get_option('post_author'),
+			'post_author' => $this->get_option('post_author'),
 			'post_category' => $this->get_option('post_category'),
-			'post_tags' 	=> $this->get_option('post_tags'),
-			'title_prefix' 	=> $this->get_option('blog_post_title_prefix'),
+			'post_tags' => $this->get_option('post_tags'),
+			'title_prefix' => $this->get_option('blog_post_title_prefix'),
 		);
 		
-		// Loop over our tweets
+// Save new tweets
 		foreach ($tweets as $tweet) {
 			// Start up a tweet object
-			$t = new AKTT_Tweet($tweet->id);
-			
-			// See if this tweet exists...continue if it does
-			if ($t->tweet_exists()) { continue; }
-			
-			// Add if it doesn't, create it
-			$t->populate_from_twitter_obj($tweet); // populate the meta from the object
-			$result = $t->add(); // insert it into the database
-			
-			// If we failed
-			if (!$result) {
-				AKTT::log('There was an error creating the tweet for the custom post_type.  Not attempting to create blog post from tweet. Tweet ID: '.$t->id);
+			$t = new AKTT_Tweet($tweet);
+			if (!($result = $t->add())) {
+				AKTT::log('There was an error saving a tweet. Tweet ID: '.$t->id);
 				continue;
 			}
-			
+
+// TODO - run this as a hook			
 			// Now conditionially create the associated blog post
 			if (
 				// If we are set to create blog posts
@@ -287,5 +282,5 @@ class AKTT_Account {
 	}
 
 }
-add_action('init', array(AKTT_Account, 'init'));
+add_action('init', array('AKTT_Account', 'init'));
 ?>

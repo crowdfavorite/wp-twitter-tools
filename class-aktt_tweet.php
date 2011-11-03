@@ -34,16 +34,21 @@ class AKTT_Tweet {
 	/**
 	 * Set up the tweet with the ID from twitter
 	 *
-	 * @param int $id - tweet id from twitter API
+	 * @param mixed $id - tweet id or full tweet object from twitter API
 	 * @param bool $from_db - Whether to auto-populate this object from the DB
 	 */
 	function __construct($id, $from_db = false) {
-		// Assign the tweet ID to this object
-		$this->add_prop('id', $id);
-		
-		// Flag to populate the object from the DB on construct
-		if ($from_db == true) {
-			$this->populate_from_db();
+		if (is_object($id)) {
+			$this->populate_from_twitter_obj($id);
+		}
+		else {
+			// Assign the tweet ID to this object
+			$this->add_prop('id', $id);
+			
+			// Flag to populate the object from the DB on construct
+			if ($from_db == true) {
+				$this->populate_from_db();
+			}
 		}
 	}
 	
@@ -135,7 +140,7 @@ class AKTT_Tweet {
 	 *
 	 * @return bool
 	 */
-	function tweet_exists() {
+	function exists() {
 		$test = $this->get_post(AKTT::$post_type);
 		return (bool) (count($test) > 0);
 	}
@@ -150,6 +155,28 @@ class AKTT_Tweet {
 	function tweet_post_exists() {
 		$posts = $this->get_post('post');
 		return (bool) (count($test) > 0);
+	}
+
+	
+	/**
+	 * Generate a GUID for WP post based on tweet ID.
+	 *
+	 * @return mixed
+	 */
+	static function guid_from_twid($tweet_id = null) {
+		return (empty($tweet_id) ? false : 'http://twitter-'.$tweet_id);
+	}
+
+
+	/**
+	 * Generate a GUID for WP post based on this objects' tweet ID.
+	 *
+	 * @uses guid_from_twid
+	 *
+	 * @return mixed
+	 */
+	function guid() {
+		return $this->guid_from_twid($this->id);
 	}
 	
 	
@@ -213,15 +240,16 @@ class AKTT_Tweet {
 	 */
 	function add() {
 		// Build the post data
-		$data = array(
-			'post_title' 	=> $this->title,
-			'post_content'	=> $this->text,
-			'post_author' 	=> $post_author,
-			'post_status' 	=> 'publish',
-			'post_type' 	=> AKTT::$post_type,
-			'post_date'		=> date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
+		$data = apply_filters('aktt_tweet_add', array(
+			'post_title' => $this->title,
+			'post_content' => $this->text,
+			'post_author' => $post_author,
+			'post_status' => 'publish',
+			'post_type' => AKTT::$post_type,
+			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
+			'guid' => $this->guid(),
 			// 'post_date_gmt' => // @TODO 
-		);
+		));
 		
 		$id = wp_insert_post($data, true);
 		
