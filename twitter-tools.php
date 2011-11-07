@@ -2,7 +2,7 @@
 /*
 Plugin Name: Twitter Tools
 Plugin URI: http://crowdfavorite.com/wordpress/plugins/twitter-tools/
-Description: A complete integration between your WordPress blog and Twitter. Bring your tweets into your blog and pass your blog posts to Twitter. Show your tweets in your sidebar.
+Description: A complete integration between your WordPress blog and Twitter. Bring your tweets into your blog and pass your blog posts to Twitter. Show your tweets in your sidebar. Relies on <a href="http://wordpress.org/extend/plugins/social/">Social</a>.
 Version: 3.0dev
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
@@ -22,63 +22,6 @@ Author URI: http://crowdfavorite.com
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 // **********************************************************************
 
-/*
-
-- @DONE register post type
-- @DONE register aktt_mentions taxonomy
-- @DONE register aktt_hashtags taxonomy
-- @DONE register aktt_status_types taxonomy (retweet, reply)
-
-## Config (per Twitter account)
-
-- check for Social to be installed, show "get this" form if not
-- enable tweet admin
-- enable public tweet access
-- blog post author
-- blog post cats
-- blog post tags
-- tweet hashtags
-- include @replies (starts with @)
-- include RTs
-
-
-## Downloading
-
-- use WP_Http
-- schedule with WP-CRON
-	- option to trigger solely via GET param (for real CRON)
-- pull tweets on new GET request (zero timeout, a-la WP-CRON)
-- store as post_type = tweet
-- set post format = status (if theme supports it)
-- ability to create blog post
-	- store tweet ID as post meta, store post ID as well?
-- support RTs?
-- Manual update tweets button
-
-
-## Sidebar Widget
-
-- # of recent items to show
-- show RTs
-- show @replies
-- AJAX pagination of tweets
-- shortcode for recent items list (accept # of items as arg)
-
-
-## Upgrade
-
-- convert data from Twitter Tools to custom posts
-- compatibility with existing TT plugins?
-
-
-
-- check for social to be installed @done
-
-
-*/
-
-// Make sure we have our AKTT_Account definition around
-// Bring in requisite classes
 require_once('class-aktt_account.php');
 require_once('class-aktt_tweet.php');
 
@@ -89,7 +32,7 @@ class AKTT {
 	static $post_type = 'aktt_tweet';
 	static $text_domain = 'twitter-tools';
 	static $menu_page_slug = 'twitter-tools';
-	static $plugin_options_key = 'aktt_plugin_settings';
+	static $plugin_options_key = 'aktt_v3_settings';
 	static $plugin_settings_section_slug = 'aktt_plugin_settings_group';
 	static $account_settings_section_slug = 'aktt_account_settings';
 	static $cap_options = 'manage_options';
@@ -101,10 +44,10 @@ class AKTT {
 	
 	static function add_actions() {
 		// General Hooks
-		add_action('init', array('AKTT', 'init'), 0);
-		add_action('init', array('AKTT', 'register_post_type'));
-		add_action('init', array('AKTT', 'register_taxonomies'));
+		add_action('wp_loaded', array('AKTT', 'register_post_type'));
+		add_action('wp_loaded', array('AKTT', 'register_taxonomies'));
 		add_filter('post_type_link', array('AKTT', 'get_tweet_permalink'), 10, 2);
+		add_action('social_account_disconnected', array('AKTT', 'social_account_disconnected'), 10, 2);
 		
 		// Admin Hooks
 		add_action('admin_init', array('AKTT', 'init_settings'));
@@ -131,6 +74,8 @@ class AKTT {
 			return;
 		}
 		
+		AKTT::add_actions();
+		
 		/* Set our default settings.  We need to do this at init() so 
 		that any text domains (i18n) are registered prior to us setting 
 		the labels. */
@@ -151,28 +96,33 @@ class AKTT {
 		AKTT::$default_settings = array(
 			'post_type_admin_ui' => array(
 				'value' => false,
-				'label' => __('Enable admin UI for post type?', 'twitter-tools'),
-				'type'	=> 'int',
+				'label' => __('Enable admin UI for tweets', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
 			),
 			'post_type_visibility' => array(
 				'value' => false,
-				'label' => __('Should Twitter Tools post type be public?', 'twitter-tools'),
-				'type'	=> 'int',
+				'label' => __('Make imported tweets public', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
 			),
 			'taxonomy_admin_ui' => array(
 				'value' => false,
-				'label' => __('Enable admin UI for custom taxonomies?', 'twitter-tools'),
-				'type'	=> 'int',
+				'label' => __('Enable admin UI for tweet taxonomies', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
 			),
 			'taxonomy_visibility' => array(
 				'value' => false,
-				'label' => __('Should Twitter Tools custom taxonomies be public?', 'twitter-tools'),
-				'type'	=> 'int',
+				'label' => __('Make tweet taxonomies public', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
 			),
 			'debug' => array(
 				'value' => 0,
-				'label' => __('Enable debug mode?', 'twitter-tools'),
-				'type' 	=> 'int',
+				'label' => __('Enable debug mode', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
 			),
 		);
 	}
@@ -394,6 +344,27 @@ class AKTT {
 		);
 	}
 	
+	static function maybe_create_db_index($col, $key_name = null, $table_name = null) {
+		global $wpdb;
+		if (empty($key_name)) {
+			$key_name = $col;
+		}
+		if (empty($table_name)) {
+			$table_name = $wpdb->posts;
+		}
+		// Add a GUID index if none exists
+		$results = $wpdb->get_results($wpdb->prepare("
+			SHOW INDEX
+			FROM $table_name
+			WHERE KEY_NAME = '%s'
+		", $key_name));
+		if (!count($results)) {
+			$wpdb->query("
+				ALTER TABLE $table_name
+				ADD INDEX ($col)
+			"); // can's use $wpdb->prepare here
+		}
+	}
 	
 	/**
 	 * Initializes the plugin settings in WP admin, using the Settings API
@@ -401,7 +372,6 @@ class AKTT {
 	 * @return void
 	 */
 	static function init_settings() {
-		
 		
 		// Register our parent setting (it contains an array of all our plugin-wide settings)
 		register_setting(
@@ -459,8 +429,11 @@ class AKTT {
 	 * @return int
 	 */
 	static function sanitize_plugin_settings($value) {
-		foreach ($value as $k => $v) {
-			$value[$k] = AKTT::sanitize_plugin_setting($k, $v);
+		AKTT::maybe_create_db_index('guid');
+		if (is_array($value)) {
+			foreach ($value as $k => $v) {
+				$value[$k] = AKTT::sanitize_plugin_setting($k, $v);
+			}
 		}
 		return $value;
 	}
@@ -485,19 +458,23 @@ class AKTT {
 	 * @return array
 	 */
 	static function sanitize_account_settings($value) {
-		foreach ($value as $id => &$acct) {
-			// If we don't have a settings array, get rid of it
-			if (!isset($acct['settings'])) {
-				unset($value[$id]);
-				continue;
-			}
-			
-			// Loop over each setting and sanitize
-			foreach (array_keys(AKTT_Account::$config) as $setting) {
-				$acct['settings'][$setting] = AKTT::sanitize_account_setting($setting, $acct['settings'][$setting]);
+		if (is_array($value)) {
+			foreach ($value as $id => &$acct) {
+				// If we don't have a settings array, get rid of it
+				if (!isset($acct['settings'])) {
+					unset($value[$id]);
+					continue;
+				}
+				
+				// Loop over each setting and sanitize
+				foreach (array_keys(AKTT_Account::$config) as $setting) {
+					$acct['settings'][$setting] = AKTT::sanitize_account_setting($setting, $acct['settings'][$setting]);
+				}
 			}
 		}
-		
+		else {
+			$value = null;
+		}
 		return $value;
 	}
 	
@@ -547,28 +524,33 @@ class AKTT {
 	 * @return void
 	 */
 	static function output_settings_page() {
-		?>
+?>
 		<div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
 			<?php screen_icon(); ?>
 			<h2><?php _e('Twitter Tools', 'twitter-tools'); ?></h2>
-			
+
+<?php
+		if (AKTT::$enabled) {
+?>
 			<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Update Tweets Manually', 'twitter-tools'); ?></a>
 			
 			<form method="post" action="options.php">
 			
 <?php 
-/* Output the nonces, and hidden fields for the page*/
-settings_fields(AKTT::$menu_page_slug);
-
-/* Output the visible settings fields */
-do_settings_sections(AKTT::$menu_page_slug);
+			// Output the nonces, and hidden fields for the page
+			settings_fields(AKTT::$menu_page_slug);
+			
+			// Output the visible settings fields
+			do_settings_sections(AKTT::$menu_page_slug);
 ?>
 				
-				<input type="submit" class="button-primary" label="<?php _e('Save Settings', 'twitter-tools'); ?>" />
+				<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'twitter-tools'); ?>" />
 			</form>
-			
+<?php
+		}
+?>
 		</div><!-- /wrap -->
-		<?php
+<?php
 	}
 	
 	
@@ -578,11 +560,7 @@ do_settings_sections(AKTT::$menu_page_slug);
 	 * @return void
 	 */
 	static function output_settings_section_text() {
-		?>
-		<p>
-			<?php _e('Settings applied to plugin.', 'twitter-tools'); ?>
-		</p>
-		<?php 
+		echo '<p>'.__('Settings applied to plugin.', 'twitter-tools').'</p>';
 	}
 	
 	
@@ -594,9 +572,7 @@ do_settings_sections(AKTT::$menu_page_slug);
 	 */
 	static function output_settings_field($args) {
 		extract($args); // $setting name is passed here
-		?>
-		<input type="checkbox" name="<?php echo esc_attr(AKTT::$plugin_options_key.'['.$setting.']'); ?>" value="1"<?php checked('1', AKTT::get_option($setting)); ?> />
-		<?php
+		echo '<input type="checkbox" name="'.esc_attr(AKTT::$plugin_options_key.'['.$setting.']').'" value="1" '.checked('1', AKTT::get_option($setting), false).' />'."\n";
 	}
 	
 	
@@ -608,32 +584,31 @@ do_settings_sections(AKTT::$menu_page_slug);
 	static function output_account_settings_section() {
 		// Get all the available accounts from Social
 		AKTT::get_social_accounts();
-
-		?>
-		<div id="<?php echo AKTT::$prefix.'accounts'; ?>">
-		<?php
-			if (empty(AKTT::$accounts)) {
-				?>
-				<p class="updated">
-					<?php printf(__('Add an account on the <a href="%s">Social settings page</a>.', 'twitter-tools'), admin_url('options-general.php?page=social.php')); ?>
-				</p>
-				<?php
+?>
+		<div id="<?php echo AKTT::$prefix; ?>accounts">
+<?php
+		if (empty(AKTT::$accounts)) {
+?>
+			<p class="aktt-none">
+				<?php _e('No Accounts.', 'twitter-tools'); ?>
+			</p>
+<?php
+		}
+		else {
+?>
+			<ul id="<?php echo AKTT::$prefix.'account_list'; ?>">
+<?php 
+			foreach (AKTT::$accounts as $acct) {
+				$acct->output_account_config();
 			}
-			else {
-				?>
-				<ul id="<?php echo AKTT::$prefix.'account_list'; ?>">
-					<?php 
-					foreach (AKTT::$accounts as $acct) {
-						$acct->output_account_config();
-					}
-					?>
-				</ul><!-- /<?php echo AKTT::$prefix.'account_list'; ?> -->
-				<?php
-			}
-			?>
-			
+?>
+			</ul><!-- /<?php echo AKTT::$prefix.'account_list'; ?> -->
+<?php
+		}
+?>
+			<p><?php printf(__('Manage Twitter accounts on your <a href="%s">Social settings page</a>.', 'twitter-tools'), admin_url('options-general.php?page=social.php')); ?></p>
 		</div><!-- <?php echo AKTT::$prefix.'accounts'; ?> -->
-		<?php
+<?php
 	}
 	
 	
@@ -643,7 +618,7 @@ do_settings_sections(AKTT::$menu_page_slug);
 	 * @return string
 	 */
 	static function get_manual_update_url() {
-		$url = add_query_arg(array('aktt_action' => 'manual_tweet_download'), admin_url());
+		$url = add_query_arg(array('aktt_action' => 'manual_tweet_download'), admin_url('index.php'));
 		return wp_nonce_url($url, 'manual_tweet_download');
 	}
 	
@@ -671,7 +646,9 @@ do_settings_sections(AKTT::$menu_page_slug);
 		that will store the various configuration options for the twitter accounts. */
 		foreach ($social_accounts as $obj_id => $acct_obj) {
 			// If this account has already been assigned, continue on
-			if (isset(AKTT::$accounts[$obj_id])) { continue; }
+			if (isset(AKTT::$accounts[$obj_id]) || !$acct_obj->universal()) {
+				continue;
+			}
 			
 			/* Call a static method to load the object, so we 
 			can ensure it was instantiated properly */
@@ -684,6 +661,20 @@ do_settings_sections(AKTT::$menu_page_slug);
 		}
 	}
 	
+	/**
+	 * Remove an account when it is removed from Social
+	 *
+	 * @return void
+	 */
+	static function social_account_disconnected($service, $id) {
+		if ($service == 'twitter') {
+			$accounts = get_option(AKTT_Account::$settings_option_name);
+			if (is_array($accounts) && count($accounts) && isset($accounts[$id])) {
+				unset($accounts[$id]);
+				update_option(AKTT_Account::$settings_option_name, $accounts);
+			}
+		}
+	}
 	
 	/**
 	 * Iterates over all the twitter accounts in social and downloads and imports the tweets.
@@ -716,9 +707,10 @@ do_settings_sections(AKTT::$menu_page_slug);
 	 * @return void
 	 */
 	function admin_enqueue_scripts($hook_suffix) {
+		add_action('admin_footer', array('AKTT', 'admin_js'));
 		if ($hook_suffix == 'settings_page_twitter-tools') {
 			wp_enqueue_script('suggest');
-			add_action('admin_footer', array('AKTT', 'admin_js'));
+			add_action('admin_footer', array('AKTT', 'admin_js_suggest'));
 		}
 	}
 	
@@ -731,10 +723,6 @@ do_settings_sections(AKTT::$menu_page_slug);
 	function admin_request_handler(){
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
-				case 'admin_js':
-					AKTT::admin_js();
-					exit;
-					break;
 				case 'manual_tweet_download':
 					// Permission checking
 					if (!check_admin_referer('manual_tweet_download') || !current_user_can(AKTT::$cap_download)) { 
@@ -752,30 +740,51 @@ do_settings_sections(AKTT::$menu_page_slug);
 		}
 	}
 	
-	
 	/**
 	 * Output the admin-side JavaScript
 	 *
 	 * @return void
 	 */
 	static function admin_js() {
-		?>
-		<script type="text/javascript">
-		jQuery(function($) {
-			$('.type-ahead').each(function() {
-				var tax = $(this).data('tax');
-				$(this).suggest(
-					ajaxurl + '?action=ajax-tag-search&tax=' + tax,
-					{ 
-						delay: 500, 
-						minchars: 2, 
-						multiple: false 
-					}
-				);
-			});
-		});
-		</script>
-		<?php
+?>
+<script type="text/javascript">
+jQuery(function($) {
+	$('a[href="post-new.php?post_type=aktt_tweet"]').hide().parent('li').hide();
+});
+</script>
+<?php
+	}
+
+	/**
+	 * Output the admin-side JavaScript for auto-suggest
+	 *
+	 * @return void
+	 */
+	static function admin_js_suggest() {
+?>
+<script type="text/javascript">
+jQuery(function($) {
+	$('.type-ahead').each(function() {
+		var tax = $(this).data('tax');
+		$(this).suggest(
+			ajaxurl + '?action=ajax-tag-search&tax=' + tax,
+			{ 
+				delay: 500, 
+				minchars: 2, 
+				multiple: false 
+			}
+		);
+	});
+});
+</script>
+<?php
+	}
+	
+	static function admin_css() {
+?>
+<style type="text/css">
+</style>
+<?php
 	}
 	
 	function log($msg) {
@@ -784,7 +793,7 @@ do_settings_sections(AKTT::$menu_page_slug);
 		}
 	}
 }
-AKTT::add_actions();
+add_action('init', array('AKTT', 'init'), 0);
 
 /********************
 *  Helper Functions *

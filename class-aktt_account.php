@@ -4,7 +4,7 @@ class AKTT_Account {
 	var $id = null; // This is the Social Service's user ID for the specified account
 	var $social_acct = null;
 	
-	static $settings_option_name = 'aktt_account_settings'; // The name of the option where we store account settings
+	static $settings_option_name = 'aktt_v3_accounts'; // The name of the option where we store account settings
 	static $config = array();
 	
 	public static function init() {
@@ -15,6 +15,12 @@ class AKTT_Account {
 	public static function set_default_config() {
 		// Set default configs
 		AKTT_Account::$config = array(
+			'enabled' => array( // author to assign to new posts
+				'label' => __('Enabled', 'twitter-tools'),
+				'label_first' => false,
+				'value' => 0,
+				'type' 	=> 'int',
+			),
 			'create_posts' => array( // author to assign to new posts
 				'label' => __('Create posts for each tweet?', 'twitter-tools'),
 				'label_first' => false,
@@ -51,8 +57,8 @@ class AKTT_Account {
 				'value' => 1,
 				'type' 	=> 'int',
 			),
-			'blog_post_title_prefix' => array( // Structure of the blog post Title
-				'label' => __('Blog Post Title Prefix', 'twitter-tools'),
+			'blog_post_title' => array( // Structure of the blog post Title
+				'label' => __('Blog Post Title', 'twitter-tools'),
 				'label_first' => true,
 				'value' => '',
 				'type' 	=> 'no_html',
@@ -97,19 +103,19 @@ class AKTT_Account {
 		$name = $this->social_acct->name();
 		$avatar = $this->social_acct->avatar();
 		$img = empty($avatar) ? '' : '<img class="avatar" src="'.esc_url($avatar).'" />';
-		?>
+?>
 		<li class="aktt_acct_item">
 			<h3><?php echo esc_html($name); ?></h3>
 			<?php echo $img; ?>
 			<ul class="aktt-account-settings">
-				<?php 
-				foreach (AKTT_Account::$config as $key => $config) {
-					$this->output_config_item($key, $config);
-				}
-				?>
+<?php 
+		foreach (AKTT_Account::$config as $key => $config) {
+			$this->output_config_item($key, $config);
+		}
+?>
 			</ul><!-- /aktt-account-settings -->
 		</li>
-		<?php
+<?php
 	}
 	
 	function output_config_item($key, $config) {
@@ -117,11 +123,12 @@ class AKTT_Account {
 		$name = AKTT_Account::$settings_option_name.'['.$this->id.'][settings]['.$key.']';
 		
 		// Get our label's HTML
-		$label_html = '<label for="'.esc_html($name).'" class="aktt-account-setting">'.esc_html($config['label']).'</label>';
+		$label_html = '<label for="'.esc_attr($name).'" class="aktt-account-setting">'.$config['label'].'</label>';
 		
 		// Get our field's HTML
 		ob_start();
 		switch ($key) {
+			case 'enabled':
 			case 'create_posts':
 			case 'exclude_reply_tweets':
 				?>
@@ -181,48 +188,46 @@ class AKTT_Account {
 	/**
 	 * Get default setting's value
 	 *
-	 * @param string $setting 
+	 * @param string $key 
 	 * @return mixed
 	 */
-	function get_default_option($setting) {
-		return isset(AKTT_Account::$config[$setting]) ? AKTT_Account::$config[$setting]['value'] : null;
+	function get_default_option($key) {
+		return isset(AKTT_Account::$config[$key]) ? AKTT_Account::$config[$key]['value'] : null;
 	}
 	
 	
 	/**
 	 * Get an option from the DB, and fall back to the default setting
 	 *
-	 * @param string $setting 
+	 * @param string $key 
 	 * @return mixed
 	 */
-	function get_option($setting) {
-		// Get a default
-		$val = $this->get_default_option($setting);
-		
-		// Now look inside the option to see if it's set there
+	function get_option($key) {
 		$option = get_option(AKTT_Account::$settings_option_name);
 		if (
 			!empty($option) 
 			&& is_array($option) 
 			&& isset($option[$this->id])
 			&& isset($option[$this->id]['settings'])
-			&& isset($option[$this->id]['settings'][$setting])
+			&& isset($option[$this->id]['settings'][$key])
 			) {
-			$val = $option[$this->id]['settings'][$setting];
+			$val = $option[$this->id]['settings'][$key];
 		}
-		return apply_filters(AKTT::$prefix.'account_get_option', $val, $setting);
+		else {
+		// Get a default
+			$val = $this->get_default_option($key);
+		}
+		return apply_filters(AKTT::$prefix.'account_get_option', $val, $key);
 	}
-	
 	
 	function download_tweets() {
 		// Use Social to download tweets for this account
-		$request = $this->service->request($this->social_acct, 'statuses/user_timeline', array(
+		$response = $this->service->request($this->social_acct, 'statuses/user_timeline', array(
 			'count' => apply_filters('aktt_account_api_download_count', 20) // default to twitter's default 
 		));
-		
-		if ($request->result == 'success' && isset($request->response) 
-			&& is_array($request->response) && count($request->response)) {
-			return $request->response;
+		$content = $response->body();
+		if ($content->result == 'success') {
+			return $content->response;
 		}
 		return false;
 	}
@@ -283,4 +288,3 @@ print_r($tweet_guids); die();
 
 }
 add_action('init', array('AKTT_Account', 'init'));
-?>
