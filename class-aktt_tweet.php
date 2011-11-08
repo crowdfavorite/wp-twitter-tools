@@ -1,49 +1,23 @@
 <?php 
 class AKTT_Tweet {
 	var $post_id = null;
-	var $meta = array(
-		'in_reply_to_status_id_str' => '',
-		'in_reply_to_user_id' => '',
-		'in_reply_to_screen_name' => '',
-		'in_reply_to_user_id_str' => '',
-		'in_reply_to_status_id' => '',
-		'contributors' => '',
-		'geo' => '',
-		'retweeted' => '',
-		'coordinates' => '',
-		'retweet_count' => '',
-		'possibly_sensitive' => '',
-		'place' => '',
-		'created_at' => '',
-		'source' => '',
-		'id' => '',
-		'favorited' => '',
-		'truncated' => '',
-		'user_id' => '',
-		'blog_post_id' => null,
-	);
+	var $raw_data = null;
 		
 	static $prefix = 'aktt_tweet_';
-	static $ignored_meta = array(
-		'id_str',
-		'user', // We have the post_meta storing just the user id
-		'text', // Not stored as meta...stored as post content
-	);
-	
 	
 	/**
 	 * Set up the tweet with the ID from twitter
 	 *
-	 * @param mixed $id - tweet id or full tweet object from twitter API
+	 * @param mixed $data - tweet id or full tweet object from twitter API
 	 * @param bool $from_db - Whether to auto-populate this object from the DB
 	 */
-	function __construct($id, $from_db = false) {
-		if (is_object($id)) {
-			$this->populate_from_twitter_obj($id);
+	function __construct($data, $from_db = false) {
+		if (is_object($data)) {
+			$this->populate_from_twitter_obj($data);
 		}
 		else {
 			// Assign the tweet ID to this object
-			$this->add_prop('id', $id);
+			$this->id = $data;
 			
 			// Flag to populate the object from the DB on construct
 			if ($from_db == true) {
@@ -62,18 +36,14 @@ class AKTT_Tweet {
 		$post = $this->get_post(AKTT::$post_type);
 
 		// @TODO error handle
-		if (is_wp_error($post) || empty($post)) {}
-		
-		// @TODO - Should these properties be filterable?? (i.e., use the functions to retrieve)
-		$this->add_prop('title', $post->post_title);
-		$this->add_prop('text', $post->post_content);
-		
-		// Get all post_meta
-		$all_meta = get_post_custom($post->ID);
-		foreach ($this->meta as $prop => $val) {
-			$val = (isset($all_meta[AKTT_Tweet::$prefix.$prop])) ? $all_meta[AKTT_Tweet::$prefix.$prop][0] : '';
-			$this->add_meta_prop($prop, $val);
+		if (is_wp_error($post) || empty($post)) {
+			return false;
 		}
+		
+		$this->title = $post->post_title;
+		$this->text = $post->post_content;
+		
+		$this->raw_data = get_post_meta($post->ID, '_aktt_raw_data', true);
 	}
 	
 	
@@ -84,41 +54,12 @@ class AKTT_Tweet {
 	 * @return void
 	 */
 	function populate_from_twitter_obj($tweet_obj) {
-		// Top-level properties
-		$this->add_prop('title', $tweet_obj->text); // Setting this to the text, b/c the ID isn't useful to the user
-		$this->add_prop('text', $tweet_obj->text);
-		
-		// Now the Meta
-		foreach ($tweet_obj as $prop => $val) {
-			if (!in_array($prop, AKTT_Tweet::$ignored_meta)) {
-				$this->add_meta_prop($prop, $val);
-			}
+		$this->raw_data = json_encode($tweet_obj);
+		$this->title = substr($tweet_obj->text, 0, 50);
+		if (strlen($tweet_obj->text) > 50) {
+			$this->title .= '...';
 		}
-		$this->add_meta_prop('user_id', $tweet_obj->user->id);
-	}
-	
-	
-	/**
-	 * Adds a top-level property
-	 *
-	 * @param string $prop 
-	 * @param mixed $val 
-	 * @return void
-	 */
-	function add_prop($prop, $val) {
-		$this->$prop = $val;
-	}
-	
-	
-	/**
-	 * Adds an item to the $this->meta array
-	 *
-	 * @param string $prop 
-	 * @param mixed $val 
-	 * @return void
-	 */
-	function add_meta_prop($prop, $val) {
-		$this->meta[$prop] = $val;
+		$this->text = $tweet_obj->text;
 	}
 	
 	
@@ -154,7 +95,7 @@ class AKTT_Tweet {
 	 */
 	function tweet_post_exists() {
 		$posts = $this->get_post('post');
-		return (bool) (count($test) > 0);
+		return (bool) (count($posts) > 0);
 	}
 
 	
@@ -188,6 +129,7 @@ class AKTT_Tweet {
 	 * @return obj|false 
 	 */
 	function get_post($post_type) {
+// TODO - search by GUID instead
 		$posts = get_posts(array(
 			'post_type' 	=> $post_type,
 			'meta_key' 		=> AKTT_Tweet::$prefix.'id',
@@ -196,15 +138,7 @@ class AKTT_Tweet {
 		return is_array($posts) ? array_shift($posts) : false;
 	}
 	
-	function tweet_is_post_notification() {
-		global $aktt;
-		if (substr($this->tw_text, 0, strlen($aktt->tweet_prefix)) == $aktt->tweet_prefix) {
-			return true;
-		}
-		return false;
-	}
-	
-	
+
 	/**
 	 * Twitter data changed - users still expect anything starting with @ is a reply
 	 *
@@ -243,7 +177,6 @@ class AKTT_Tweet {
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title,
 			'post_content' => $this->text,
-			'post_author' => $post_author,
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
 			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
@@ -251,36 +184,22 @@ class AKTT_Tweet {
 			// 'post_date_gmt' => // @TODO 
 		));
 		
-		$id = wp_insert_post($data, true);
+		$post_id = wp_insert_post($data, true);
 		
 		if (is_wp_error($id)) {
 			AKTT::log('WP_Error:: '.$blog_post_id->get_error_message());
 			return false;
 		}
 		
-		// Set this tweet's post ID
-		$this->add_prop('post_id', $id);
+		update_post_meta($post_id, '_aktt_raw_data', $this->raw_data);
 		
-		// Add all the various post_meta items
-		$this->add_metas();
+		// Set this tweet's post ID
+		$this->add_prop('post_id', $post_id);
 		
 		// Allow things to hook in here
 		do_action('AKTT_Tweet_add', $this);
 		
 		return true;
-	}
-	
-	/**
-	 * Adds various post_meta to the tweet
-	 *
-	 * @return void
-	 */
-	function add_metas() {
-		if (empty($this->post_id)) { return; }
-		
-		foreach ($this->meta as $prop => $val) {
-			add_post_meta($this->post_id, AKTT_Tweet::$prefix.$prop, $val);
-		}
 	}
 	
 	function create_blog_post($args = array()) {
@@ -292,48 +211,46 @@ class AKTT_Tweet {
 		
 		// Build the post data
 		$data = array(
-			'post_title' 	=> $title_prefix.$this->title, // @TODO how to build this (account config?)
-			'post_content'	=> $this->text, // @TODO what should this be (account config?)
-			'post_author' 	=> $post_author,
-			'tax_input'		=> array(
+			'post_title' => $title_prefix.$this->title, // @TODO how to build this (account config?)
+			'post_content' => $this->text, // @TODO what should this be (account config?)
+			'post_author' => $post_author,
+			'tax_input' => array(
 				'category' => array($post_category),
-				'post_tag' => array_map(array(AKTT_Tweet, 'get_tag_name'), array($post_tags)),
+				'post_tag' => array_map(array('AKTT_Tweet', 'get_tag_name'), array($post_tags)),
 			),
-			'post_status' 	=> 'publish',
-			'post_type' 	=> $post_type,
-			'post_date'		=> date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
+			'post_status' => 'publish',
+			'post_type' => $post_type,
+			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
 			// 'post_date_gmt' => // @TODO 
 		);
 		
-		// Add a post format in, we the theme and post_type supports it
-		if (post_type_supports($post_type, 'post-formats')) {
-			AKTT::log('Setting post_format to "status"');
-			$data['tax_input']['post_format'] = 'status';
-		}
+		$post_id = wp_insert_post($data, true);
 		
-		$blog_post_id = wp_insert_post($data, true);
-		
-		if (is_wp_error($blog_post_id)) {
-			AKTT::log('WP_Error:: '.$blog_post_id->get_error_message());
+		if (is_wp_error($post_id)) {
+			AKTT::log('WP_Error:: '.$post_id->get_error_message());
 			return false;
 		}
 		
+		set_post_format($post_id, 'image');
+		
 		// Set the post's meta value for tweet post_id
-		update_post_meta($blog_post_id, AKTT_Tweet::$prefix.'id', $this->id); // twitter's tweet ID
-		update_post_meta($blog_post_id, AKTT_Tweet::$prefix.'post_id', $this->post_id); // the post_type's post ID for the tweet
+		update_post_meta($post_id, AKTT_Tweet::$prefix.'id', $this->id); // twitter's tweet ID
+		update_post_meta($post_id, AKTT_Tweet::$prefix.'post_id', $this->post_id); // the post_type's post ID for the tweet
 		
 		
+// TODO - test this
 		// Add post_meta so Social knows to aggregate info about this post
-		update_post_meta($blog_post_id, Social::$meta_prefix.'broadcasted', array('twitter' => '1'));
-		update_post_meta($blog_post_id, Social::$meta_prefix.'broadcasted_ids', array('twitter' => array(
+		update_post_meta($post_id, Social::$meta_prefix.'broadcasted', array('twitter' => '1'));
+		update_post_meta($post_id, Social::$meta_prefix.'broadcasted_ids', array('twitter' => array(
 			$this->meta['user_id'] => $this->id,
 		)));
 		
 		
 		// Set the tweets property to the blog post' ID
-		$this->add_meta_prop('blog_post_id', $blog_post_id);
+		$this->blog_post_id = $post_id;
+
 		// Add it to the tweet's post_meta as well
-		update_post_meta($this->post_id, AKTT_Tweet::$prefix.'blog_post_id', $blog_post_id);
+		update_post_meta($this->post_id, AKTT_Tweet::$prefix.'blog_post_id', $post_id);
 		
 		// Let the account know we were successful
 		return true;
@@ -352,4 +269,3 @@ class AKTT_Tweet {
 	
 }
 
-?>

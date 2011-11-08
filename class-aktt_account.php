@@ -223,7 +223,9 @@ class AKTT_Account {
 	function download_tweets() {
 		// Use Social to download tweets for this account
 		$response = $this->service->request($this->social_acct, 'statuses/user_timeline', array(
-			'count' => apply_filters('aktt_account_api_download_count', 20) // default to twitter's default 
+			'count' => apply_filters('aktt_account_api_download_count', 20), // default to twitter's default 
+			'include_entities' => 1,
+			'include_rts' => 1,
 		));
 		$content = $response->body();
 		if ($content->result == 'success') {
@@ -240,14 +242,20 @@ class AKTT_Account {
 	 * @return int - number of tweets saved
 	 */
 	function save_tweets($tweets) {
+		global $wpdb;
 // strip out any tweets we already have
 		$tweet_guids = array();
 		foreach ($tweets as $tweet) {
 			$tweet_guids[] = AKTT_Tweet::guid_from_twid($tweet->id);
 		}
 
-print_r($tweet_guids); die();
-
+		$existing_guids = $wpdb->get_col("
+			SELECT guid
+			FROM $wpdb->posts
+			WHERE guid IN ('".implode("','", $tweet_guids)."')
+			AND post_type = '".AKTT::$post_type."'
+		");
+		
 		// Set the args for any blog posts created
 		$post_tweet_args = array(
 			'post_author' => $this->get_option('post_author'),
@@ -258,6 +266,10 @@ print_r($tweet_guids); die();
 		
 // Save new tweets
 		foreach ($tweets as $tweet) {
+			if (in_array($this->guid_from_twid($tweet->id), $existing_guids)) {
+				continue;
+			}
+
 			// Start up a tweet object
 			$t = new AKTT_Tweet($tweet);
 			if (!($result = $t->add())) {
@@ -265,17 +277,16 @@ print_r($tweet_guids); die();
 				continue;
 			}
 
-// TODO - run this as a hook			
 			// Now conditionially create the associated blog post
 			if (
 				// If we are set to create blog posts
 				$this->get_option('create_posts') == 1
 				
-				// AND this tweet hasn't created a post yet
-				&& !$t->tweet_post_exists()
-				
 				// AND NOT we aren't supposed to do reply tweets and this is a reply
 				&& !($this->get_option('exclude_reply_tweets') && $t->is_reply())
+				
+				// AND this tweet hasn't created a post yet
+				&& !$t->tweet_post_exists()
 				
 				// AND the tweet didn't come from a Social broadcast (ie, was originally a blog post)
 				&& !$t->was_broadcast()
@@ -285,6 +296,6 @@ print_r($tweet_guids); die();
 			}
 		}
 	}
-
+	
 }
 add_action('init', array('AKTT_Account', 'init'));

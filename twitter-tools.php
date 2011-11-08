@@ -441,7 +441,7 @@ class AKTT {
 	/**
 	 * Sanitizes the ACCOUNT settings from the Twitter Tools' admin page.
 	 * 
-	 * 	** Option Storage Format **
+	 *	** Option Storage Format **
 	 *	
 	 *	$option_value = array(
 	 *		$this->id => array(
@@ -693,7 +693,7 @@ class AKTT {
 		// iterate over each account and download the tweets
 		foreach (AKTT::$accounts as $id => $acct) {
 			// Download the tweets for that acct
-			if ($tweets = $acct->download_tweets()) {
+			if ($acct->get_option('enabled') == 1 && $tweets = $acct->download_tweets()) {
 				$acct->save_tweets($tweets);
 			}
 		}
@@ -724,7 +724,7 @@ class AKTT {
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
 				case 'manual_tweet_download':
-					// Permission checking
+					// Permission & nonce checking
 					if (!check_admin_referer('manual_tweet_download') || !current_user_can(AKTT::$cap_download)) { 
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
 					}
