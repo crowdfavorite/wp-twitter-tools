@@ -195,19 +195,25 @@ class AKTT {
 			'show_ui' => (bool) self::get_option('taxonomy_admin_ui'),
 		);
 		$taxonomies = array(
-			'self_mentions' => array_merge($defaults, array(
+			'aktt_account' => array_merge($defaults, array(
+				'labels' => array(
+					'name' => __('Account', 'twitter-tools'),
+					'singular_name' => __('Account', 'twitter-tools')
+				),
+			)),
+			'aktt_mentions' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Mentions', 'twitter-tools'),
 					'singular_name' => __('Mention', 'twitter-tools')
 				),
 			)),
-			'self_hashtags' => array_merge($defaults, array(
+			'aktt_hashtags' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Hashtags', 'twitter-tools'),
 					'singular_name' => __('Hashtag', 'twitter-tools')
 				),
 			)),
-			'self_types' => array_merge($defaults, array(
+			'aktt_types' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Types', 'twitter-tools'),
 					'singular_name' => __('Type', 'twitter-tools')
@@ -250,18 +256,6 @@ class AKTT {
 	}
 	
 	
-	// /** @DEPRECATED for using one large option instead.  
-	//  * Retrieves the actual WordPress option name for a passed setting.
-	//  * For the time being, it just appends the "aktt_" prefix.
-	//  *
-	//  * @param string $setting 
-	//  * @return string
-	//  */
-	// static function get_option_name_for_setting($setting) {
-	// 	return self::$prefix.$setting;
-	// }
-	
-	
 	/**
 	 * Updates a setting, if === null is passed as the value, it 
 	 * picks up the default setting
@@ -275,6 +269,7 @@ class AKTT {
 		$val = is_null($value) ? self::get_default_setting($key) : $value;
 		return update_option(self::$prefix.$key, $val);
 	}
+
 
 	/**
 	 * Updates a setting, with a user capability check

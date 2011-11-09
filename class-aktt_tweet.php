@@ -104,6 +104,33 @@ class AKTT_Tweet {
 	}
 	
 	/**
+	 * Accessor function for tweet author's username
+	 *
+	 * @return string
+	 */
+	public function username() {
+		return (isset($this->data) ? $this->data->user->screen_name : null);
+	}
+	
+	/**
+	 * Accessor function for tweet's hashtags
+	 *
+	 * @return string
+	 */
+	public function hashtags() {
+		return (isset($this->data) ? $this->data->entities->hashtags : array());
+	}
+	
+	/**
+	 * Accessor function for tweet's mentions
+	 *
+	 * @return string
+	 */
+	public function mentions() {
+		return (isset($this->data) ? $this->data->entities->user_mentions : array());
+	}
+	
+	/**
 	 * Takes the twitter date format and gets a timestamp from it
 	 *
 	 * @param string $date - "Fri Aug 05 20:33:38 +0000 2011"
@@ -204,16 +231,12 @@ class AKTT_Tweet {
 	 *
 	 * @return bool
 	 */
-// TODO - fix this
 	function was_broadcast() {
-		if (isset($this->meta['blog_post_id']) && !empty($this->meta['blog_post_id'])) {
-			$broadcasted_ids = get_post_meta($this->meta['blog_post_id'], Social::$prefix.'broadcasted_ids', true);
-			if (isset($broadcasted_ids['twitter']) && is_array($broadcasted_ids['twitter'])) {
-				AKTT::log('Looking through blog post ('.$this->meta['blog_post_id'].') broadcasted IDs for '.$this->id());
-				return (bool) in_array($this->id(), $broadcasted_ids['twitter']);
-			}
+		$was_broadcast = true;
+		if (isset($this->data)) {
+			$was_broadcast = (bool) (strpos($this->data->source, 'sopresto.mailchimp.com') !== false);
 		}
-		return false;
+		return $was_broadcast;
 	}
 	
 	
@@ -224,16 +247,14 @@ class AKTT_Tweet {
 	 * @return void
 	 */
 	function add() {
-		$tax_input = array();
-		if (count($this->data->entities->hashtags)) {
-			foreach ($this->data->entities->hashtags as $hashtag) {
-				$tax_input['aktt_hashtags'] = $hashtag->text;
-			}
+		$tax_input = array(
+			'aktt_account' => $this->username();
+		);
+		foreach ($this->hashtags() as $hashtag) {
+			$tax_input['aktt_hashtags'][] = $hashtag->text;
 		}
-		if (count($this->data->entities->user_mentions)) {
-			foreach ($this->data->entities->user_mentions as $mention) {
-				$tax_input['aktt_mentions'] = $mention->screen_name;
-			}
+		foreach ($this->mentions() as $mention) {
+			$tax_input['aktt_mentions'][] = $mention->screen_name;
 		}
 		$special = 0;
 		if ($this->is_reply()) {
