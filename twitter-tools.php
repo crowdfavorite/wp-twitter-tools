@@ -42,12 +42,25 @@ class AKTT {
 	static $accounts = array();
 	static $debug = false;
 	
-	static function add_actions() {
+	/**
+	 * Sets whether or not the plugin should be enabled.  Also initialize the plugin's settings.
+	 *
+	 * @return void
+	 */
+	static function init() {
+		self::$enabled = class_exists('Social');
+		if (!self::$enabled) {
+			self::add_admin_notice('error', sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'));
+			return;
+		}
+		
+		self::register_post_type();
+		self::register_taxonomies();
+
 		// General Hooks
-		add_action('wp_loaded', array('AKTT', 'register_post_type'));
-		add_action('wp_loaded', array('AKTT', 'register_taxonomies'));
 		add_filter('post_type_link', array('AKTT', 'get_tweet_permalink'), 10, 2);
 		add_action('social_account_disconnected', array('AKTT', 'social_account_disconnected'), 10, 2);
+		add_action('social_broadcast_response', array('AKTT', 'social_broadcast_response'), 10, 3);
 		
 		// Admin Hooks
 		add_action('admin_init', array('AKTT', 'init_settings'));
@@ -59,30 +72,14 @@ class AKTT {
 		
 		// Cron Hooks
 		add_action('social_cron_15', array('AKTT', 'import_tweets'));
-	}
-	
-	
-	/**
-	 * Sets whether or not the plugin should be enabled.  Also initialize the plugin's settings.
-	 *
-	 * @return void
-	 */
-	static function init() {
-		AKTT::$enabled = class_exists('Social');
-		if (!AKTT::$enabled) {
-			AKTT::add_admin_notice('error', sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'));
-			return;
-		}
-		
-		AKTT::add_actions();
 		
 		/* Set our default settings.  We need to do this at init() so 
 		that any text domains (i18n) are registered prior to us setting 
 		the labels. */
-		AKTT::set_default_settings();
+		self::set_default_settings();
 		
 		// Set logging to what's in the plugin settings
-		AKTT::$debug = AKTT::get_option('debug');
+		self::$debug = self::get_option('debug');
 	}
 	
 	
@@ -93,7 +90,7 @@ class AKTT {
 	 */
 	static function set_default_settings() {
 		// Set default settings
-		AKTT::$default_settings = array(
+		self::$default_settings = array(
 			'post_type_admin_ui' => array(
 				'value' => false,
 				'label' => __('Enable admin UI for tweets', 'twitter-tools'),
@@ -136,7 +133,7 @@ class AKTT {
 	 * @return void
 	 */
 	static function add_admin_notice($type, $msg) {
-		AKTT::$admin_notices[] = array(
+		self::$admin_notices[] = array(
 			'type' => $type == 'error' ? $type : 'updated', // If it's not an error, set it to updated
 			'msg' => $msg
 		);
@@ -149,13 +146,13 @@ class AKTT {
 	 * @return void
 	 */
 	static function admin_notices() {
-		if (is_array(AKTT::$admin_notices)) {
-			foreach (AKTT::$admin_notices as $notice) {
+		if (is_array(self::$admin_notices)) {
+			foreach (self::$admin_notices as $notice) {
 				extract($notice);
 				?>
 				<div class="<?php echo esc_attr($type); ?>">
 					<p><?php echo $msg; ?></p>
-				</div><!-- /<?php echo esc_attr($type); ?> -->
+				</div><!-- /<?php echo esc_html($type); ?> -->
 				<?php
 			}
 		}
@@ -168,7 +165,7 @@ class AKTT {
 	 * @return void
 	 */
 	static function register_post_type() {
-		register_post_type(AKTT::$post_type, array(
+		register_post_type(self::$post_type, array(
 			'labels' => array(
 				'name' => __('Tweets', 'twitter-tools'),
 				'singular_name' => __('Tweet', 'twitter-tools')
@@ -176,14 +173,14 @@ class AKTT {
 			'supports' => array(
 				'editor',
 			),
-			'public' => (bool) AKTT::get_option('post_type_visibility'),
-			'show_ui' => (bool) AKTT::get_option('post_type_admin_ui'),
+			'public' => (bool) self::get_option('post_type_visibility'),
+			'show_ui' => (bool) self::get_option('post_type_admin_ui'),
 			'rewrite' => array(
 				'slug' => 'tweets',
 				'with_front' => false
 			),
 		));
-		add_permastruct(AKTT::$post_type, '/tweets/%post_id%', false, EP_PERMALINK);
+		add_permastruct(self::$post_type, '/tweets/%post_id%', false, EP_PERMALINK);
 	}
 	
 	
@@ -194,23 +191,23 @@ class AKTT {
 	 */
 	static function register_taxonomies() {
 		$defaults = array(
-			'public' => (bool) AKTT::get_option('taxonomy_visibility'),
-			'show_ui' => (bool) AKTT::get_option('taxonomy_admin_ui'),
+			'public' => (bool) self::get_option('taxonomy_visibility'),
+			'show_ui' => (bool) self::get_option('taxonomy_admin_ui'),
 		);
 		$taxonomies = array(
-			'aktt_mentions' => array_merge($defaults, array(
+			'self_mentions' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Mentions', 'twitter-tools'),
 					'singular_name' => __('Mention', 'twitter-tools')
 				),
 			)),
-			'aktt_hashtags' => array_merge($defaults, array(
+			'self_hashtags' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Hashtags', 'twitter-tools'),
 					'singular_name' => __('Hashtag', 'twitter-tools')
 				),
 			)),
-			'aktt_types' => array_merge($defaults, array(
+			'self_types' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Types', 'twitter-tools'),
 					'singular_name' => __('Type', 'twitter-tools')
@@ -218,7 +215,7 @@ class AKTT {
 			)),
 		);
 		foreach ($taxonomies as $tax => $args) {
-			register_taxonomy($tax, AKTT::$post_type, $args);
+			register_taxonomy($tax, self::$post_type, $args);
 		}
 	}
 	
@@ -230,7 +227,7 @@ class AKTT {
 	 * @return mixed
 	 */
 	static function get_default_setting($setting) {
-		return isset(AKTT::$default_settings[$setting]) ? AKTT::$default_settings[$setting]['value'] : null;
+		return isset(self::$default_settings[$setting]) ? self::$default_settings[$setting]['value'] : null;
 	}
 	
 	
@@ -242,14 +239,14 @@ class AKTT {
 	 */
 	static function get_option($key) {
 		// Do we have an option?
-		$option = get_option(AKTT::$plugin_options_key);
+		$option = get_option(self::$plugin_options_key);
 		if (!empty($option) && is_array($option) && isset($option[$key])) {
 			$val = $option[$key];
 		}
 		else { // Get a default
-			$val = AKTT::get_default_setting($key);
+			$val = self::get_default_setting($key);
 		}
-		return apply_filters(AKTT::$prefix.'get_option', $val, $key);
+		return apply_filters(self::$prefix.'get_option', $val, $key);
 	}
 	
 	
@@ -261,7 +258,7 @@ class AKTT {
 	//  * @return string
 	//  */
 	// static function get_option_name_for_setting($setting) {
-	// 	return AKTT::$prefix.$setting;
+	// 	return self::$prefix.$setting;
 	// }
 	
 	
@@ -275,8 +272,8 @@ class AKTT {
 	 */
 	static function save_setting($key, $value = null) {
 		// If it's null, get the default value
-		$val = is_null($value) ? AKTT::get_default_setting($key) : $value;
-		return update_option(AKTT::$prefix.$key, $val);
+		$val = is_null($value) ? self::get_default_setting($key) : $value;
+		return update_option(self::$prefix.$key, $val);
 	}
 
 	/**
@@ -288,8 +285,8 @@ class AKTT {
 	 * @return void
 	 */
 	static function form_save_setting($key, $value = null) {
-		if (current_user_can(AKTT::$cap_options)) {
-			return AKTT::save_setting($key, $value);
+		if (current_user_can(self::$cap_options)) {
+			return self::save_setting($key, $value);
 		}
 	}
 	
@@ -302,7 +299,7 @@ class AKTT {
 	 * @return string
 	 */
 	static function get_tweet_permalink($post_link, $post) {
-		if ($post->post_type == AKTT::$post_type) {
+		if ($post->post_type == self::$post_type) {
 			$rewritecode = array(
 				'%post_id%',
 			);
@@ -324,7 +321,7 @@ class AKTT {
 	 */
 	function plugin_action_links($links, $file) {
 		if (basename($file) == basename(__FILE__)) {
-			$settings_link = '<a href="options-general.php?page='.AKTT::$menu_page_slug.'">'.__('Settings', 'twitter-tools').'</a>';
+			$settings_link = '<a href="options-general.php?page='.self::$menu_page_slug.'">'.__('Settings', 'twitter-tools').'</a>';
 			array_unshift($links, $settings_link);
 		}
 		return $links;
@@ -338,8 +335,8 @@ class AKTT {
 		add_options_page(
 			__('Twitter Tools Options', 'twitter-tools'),
 			__('Twitter Tools', 'twitter-tools'),
-			AKTT::$cap_options,
-			AKTT::$menu_page_slug,
+			self::$cap_options,
+			self::$menu_page_slug,
 			array('AKTT', 'output_settings_page')
 		);
 	}
@@ -375,14 +372,14 @@ class AKTT {
 		
 		// Register our parent setting (it contains an array of all our plugin-wide settings)
 		register_setting(
-			AKTT::$menu_page_slug, // Page it belongs to
-			AKTT::$plugin_options_key, // option name
+			self::$menu_page_slug, // Page it belongs to
+			self::$plugin_options_key, // option name
 			array('AKTT', 'sanitize_plugin_settings') // Sanitize callback
 		);
 
 		// Register our parent setting (it contains an array of all our plugin-wide settings)
 		register_setting(
-			AKTT::$menu_page_slug, // Page it belongs to
+			self::$menu_page_slug, // Page it belongs to
 			AKTT_Account::$settings_option_name, // option name
 			array('AKTT', 'sanitize_account_settings') // Sanitize callback
 		);
@@ -390,29 +387,29 @@ class AKTT {
 
 		// Add a section of settings to Twitter Tools' settings page
 		add_settings_section(
-			AKTT::$plugin_settings_section_slug, // group id
+			self::$plugin_settings_section_slug, // group id
 			__('General Plugin Settings', 'twitter-tools'), // title
 			array('AKTT', 'output_settings_section_text'), // callback for text
-			AKTT::$menu_page_slug // Page Handle
+			self::$menu_page_slug // Page Handle
 		);
 		
 		// Add a section for Account setting
 		add_settings_section(
-			AKTT::$account_settings_section_slug, // group id
+			self::$account_settings_section_slug, // group id
 			__('Accounts', 'twitter-tools'), // title
 			array('AKTT', 'output_account_settings_section'), // callback for text
-			AKTT::$menu_page_slug // Page Handle
+			self::$menu_page_slug // Page Handle
 		);
 
 		// Register our settings' fields with WP
-		foreach (AKTT::$default_settings as $setting => $details) {
+		foreach (self::$default_settings as $setting => $details) {
 			// Add the settings to the proper group
 			add_settings_field(
 				$setting, // unique ID for the field...not necessarily the option_name
 				$details['label'],
 				array('AKTT', 'output_settings_field'), // Callback to output the actual HTML field
-				AKTT::$menu_page_slug, // Page Handle
-				AKTT::$plugin_settings_section_slug, // Settings Group
+				self::$menu_page_slug, // Page Handle
+				self::$plugin_settings_section_slug, // Settings Group
 				array(
 					'setting' => $setting,
 				)
@@ -429,10 +426,10 @@ class AKTT {
 	 * @return int
 	 */
 	static function sanitize_plugin_settings($value) {
-		AKTT::maybe_create_db_index('guid');
+		self::maybe_create_db_index('guid');
 		if (is_array($value)) {
 			foreach ($value as $k => $v) {
-				$value[$k] = AKTT::sanitize_plugin_setting($k, $v);
+				$value[$k] = self::sanitize_plugin_setting($k, $v);
 			}
 		}
 		return $value;
@@ -468,7 +465,7 @@ class AKTT {
 				
 				// Loop over each setting and sanitize
 				foreach (array_keys(AKTT_Account::$config) as $setting) {
-					$acct['settings'][$setting] = AKTT::sanitize_account_setting($setting, $acct['settings'][$setting]);
+					$acct['settings'][$setting] = self::sanitize_account_setting($setting, $acct['settings'][$setting]);
 				}
 			}
 		}
@@ -480,11 +477,11 @@ class AKTT {
 	
 	
 	static function sanitize_plugin_setting($setting, $value) {
-		return AKTT::sanitize_setting($setting, $value, AKTT::$default_settings[$setting]['type']);
+		return self::sanitize_setting($setting, $value, self::$default_settings[$setting]['type']);
 	}
 	
 	static function sanitize_account_setting($setting, $value) {
-		return AKTT::sanitize_setting($setting, $value, AKTT_Account::$config[$setting]['type']);
+		return self::sanitize_setting($setting, $value, AKTT_Account::$config[$setting]['type']);
 	}
 	
 	
@@ -525,23 +522,23 @@ class AKTT {
 	 */
 	static function output_settings_page() {
 ?>
-		<div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
+		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
 			<?php screen_icon(); ?>
 			<h2><?php _e('Twitter Tools', 'twitter-tools'); ?></h2>
 
 <?php
-		if (AKTT::$enabled) {
+		if (self::$enabled) {
 ?>
-			<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Update Tweets Manually', 'twitter-tools'); ?></a>
+			<a href="<?php echo esc_url(self::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Update Tweets Manually', 'twitter-tools'); ?></a>
 			
 			<form method="post" action="options.php">
 			
 <?php 
 			// Output the nonces, and hidden fields for the page
-			settings_fields(AKTT::$menu_page_slug);
+			settings_fields(self::$menu_page_slug);
 			
 			// Output the visible settings fields
-			do_settings_sections(AKTT::$menu_page_slug);
+			do_settings_sections(self::$menu_page_slug);
 ?>
 				
 				<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'twitter-tools'); ?>" />
@@ -572,7 +569,7 @@ class AKTT {
 	 */
 	static function output_settings_field($args) {
 		extract($args); // $setting name is passed here
-		echo '<input type="checkbox" name="'.esc_attr(AKTT::$plugin_options_key.'['.$setting.']').'" value="1" '.checked('1', AKTT::get_option($setting), false).' />'."\n";
+		echo '<input type="checkbox" name="'.esc_attr(self::$plugin_options_key.'['.$setting.']').'" value="1" '.checked('1', self::get_option($setting), false).' />'."\n";
 	}
 	
 	
@@ -583,11 +580,11 @@ class AKTT {
 	 */
 	static function output_account_settings_section() {
 		// Get all the available accounts from Social
-		AKTT::get_social_accounts();
+		self::get_social_accounts();
 ?>
-		<div id="<?php echo AKTT::$prefix; ?>accounts">
+		<div id="<?php echo self::$prefix; ?>accounts">
 <?php
-		if (empty(AKTT::$accounts)) {
+		if (empty(self::$accounts)) {
 ?>
 			<p class="aktt-none">
 				<?php _e('No Accounts.', 'twitter-tools'); ?>
@@ -596,18 +593,18 @@ class AKTT {
 		}
 		else {
 ?>
-			<ul id="<?php echo AKTT::$prefix.'account_list'; ?>">
+			<ul id="<?php echo self::$prefix.'account_list'; ?>">
 <?php 
-			foreach (AKTT::$accounts as $acct) {
+			foreach (self::$accounts as $acct) {
 				$acct->output_account_config();
 			}
 ?>
-			</ul><!-- /<?php echo AKTT::$prefix.'account_list'; ?> -->
+			</ul><!-- /<?php echo self::$prefix.'account_list'; ?> -->
 <?php
 		}
 ?>
 			<p><?php printf(__('Manage Twitter accounts on your <a href="%s">Social settings page</a>.', 'twitter-tools'), admin_url('options-general.php?page=social.php')); ?></p>
-		</div><!-- <?php echo AKTT::$prefix.'accounts'; ?> -->
+		</div><!-- <?php echo self::$prefix.'accounts'; ?> -->
 <?php
 	}
 	
@@ -646,7 +643,7 @@ class AKTT {
 		that will store the various configuration options for the twitter accounts. */
 		foreach ($social_accounts as $obj_id => $acct_obj) {
 			// If this account has already been assigned, continue on
-			if (isset(AKTT::$accounts[$obj_id]) || !$acct_obj->universal()) {
+			if (isset(self::$accounts[$obj_id]) || !$acct_obj->universal()) {
 				continue;
 			}
 			
@@ -656,7 +653,7 @@ class AKTT {
 			
 			// Assign the object, only if we were successfully created
 			if (is_a($o, 'AKTT_Account')) {
-				AKTT::$accounts[$obj_id] = $o;
+				self::$accounts[$obj_id] = $o;
 			}
 		}
 	}
@@ -683,18 +680,42 @@ class AKTT {
 	 */
 	function import_tweets() {
 		// load our accounts
-		AKTT::get_social_accounts();
+		self::get_social_accounts();
 		
 		// See if we have any accounts to loop over
-		if (!is_array(AKTT::$accounts) || empty(AKTT::$accounts)) {
+		if (!is_array(self::$accounts) || empty(self::$accounts)) {
 			return;
 		}
 		
 		// iterate over each account and download the tweets
-		foreach (AKTT::$accounts as $id => $acct) {
+		foreach (self::$accounts as $id => $acct) {
 			// Download the tweets for that acct
 			if ($acct->get_option('enabled') == 1 && $tweets = $acct->download_tweets()) {
 				$acct->save_tweets($tweets);
+			}
+		}
+	}
+	
+	/**
+	 * Create tweet when Social does a broadcast
+	 *
+	 * @param Social_Response $response 
+	 * @param string $key
+	 * @param stdClass $post
+	 * @return void
+	 */
+	static function social_broadcast_response($response, $key, $post) {
+// get tweet
+		$data = $response->body();
+		$tweet = $data->response;
+// check if it's one of our enabled accounts
+		self::get_social_accounts();
+		foreach (self::$accounts as $account) {
+			if ($account->get_option('enabled') && $account->social_acct->id() == $tweet->user->id) {
+// populate AKTT_Tweet object, save
+				$t = new AKTT_Tweet($tweet);
+				$t->add();
+				break;
 			}
 		}
 	}
@@ -725,13 +746,13 @@ class AKTT {
 			switch ($_GET['aktt_action']) {
 				case 'manual_tweet_download':
 					// Permission & nonce checking
-					if (!check_admin_referer('manual_tweet_download') || !current_user_can(AKTT::$cap_download)) { 
+					if (!check_admin_referer('manual_tweet_download') || !current_user_can(self::$cap_download)) { 
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
 					}
 					
-					AKTT::import_tweets();
+					self::import_tweets();
 					wp_redirect(add_query_arg(array(
-						'page' => AKTT::$menu_page_slug,
+						'page' => self::$menu_page_slug,
 						'tweets_updated' => '1'),
 						admin_url('options-general.php')
 					));
@@ -788,7 +809,7 @@ jQuery(function($) {
 	}
 	
 	function log($msg) {
-		if (AKTT::$debug) {
+		if (self::$debug) {
 			error_log($msg);
 		}
 	}
