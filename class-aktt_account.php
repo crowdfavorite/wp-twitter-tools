@@ -266,12 +266,15 @@ class AKTT_Account {
 		
 // Save new tweets
 		foreach ($tweets as $tweet) {
-			if (in_array($this->guid_from_twid($tweet->id), $existing_guids)) {
+			if (in_array(AKTT_Tweet::guid_from_twid($tweet->id), $existing_guids)) {
 				continue;
 			}
 
 			// Start up a tweet object
 			$t = new AKTT_Tweet($tweet);
+
+$t->add();
+print_r($tweet); die();
 			if (!($result = $t->add())) {
 				AKTT::log('There was an error saving a tweet. Tweet ID: '.$t->id);
 				continue;

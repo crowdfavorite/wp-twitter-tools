@@ -210,7 +210,7 @@ class AKTT {
 					'singular_name' => __('Hashtag', 'twitter-tools')
 				),
 			)),
-			'aktt_status_types' => array_merge($defaults, array(
+			'aktt_types' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Types', 'twitter-tools'),
 					'singular_name' => __('Type', 'twitter-tools')
