@@ -40,17 +40,17 @@ class AKTT_Account {
 				'type' 	=> 'is_cat',
 			),
 			'post_tags' => array( // tags to add to posts created from this acct
-				'label' => __('Post Tag', 'twitter-tools'),
+				'label' => __('Post Tags', 'twitter-tools'),
 				'label_first' => true,
 				'value' => array(),
 				'type' 	=> 'is_tag',
 			),
-			'hashtag' => array( // hashtag to create blog posts from
-				'label' => __('Hashtag', 'twitter-tools'),
-				'label_first' => true,
-				'value' => '',
-				'type' 	=> 'no_html',
-			),
+// 			'hashtag' => array( // hashtag to create blog posts from
+// 				'label' => __('Hashtags', 'twitter-tools'),
+// 				'label_first' => true,
+// 				'value' => '',
+// 				'type' 	=> 'no_html',
+// 			),
 			'exclude_reply_tweets' => array( // Exclude tweets that are a reply from creating their own blog posts?
 				'label' => __('Exclude reply tweets from post creation', 'twitter-tools'),
 				'label_first' => false,
@@ -58,7 +58,7 @@ class AKTT_Account {
 				'type' 	=> 'int',
 			),
 			'blog_post_title' => array( // Structure of the blog post Title
-				'label' => __('Blog Post Title', 'twitter-tools'),
+				'label' => __('Blog Post Title Prefix', 'twitter-tools'),
 				'label_first' => true,
 				'value' => '',
 				'type' 	=> 'no_html',
@@ -150,7 +150,6 @@ class AKTT_Account {
 					'selected' => $this->get_option($key),
 					'hide_empty' => 0,
 					'taxonomy' => 'category',
-					'show_option_none' => '&mdash; Please Select &mdash;',
 				));
 				break;
 			case 'post_tags':
@@ -158,13 +157,13 @@ class AKTT_Account {
 				$term = get_term_by('id', $this->get_option($key), 'post_tag');
 				$value = (!$term) ? '' : $term->name;
 				?>
-				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_html($name); ?>" id="<?php echo esc_html($name); ?>" value="<?php echo esc_attr($value); ?>" />
+				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($value); ?>" />  <?php _e('(comma separated)', 'twitter-tools'); ?>
 				<?php
 				break;
 			case 'hashtag':
 			default:
 				?>
-				<input type="text" name="<?php echo esc_html($name); ?>" id="<?php echo esc_html($name); ?>" value="<?php echo esc_attr($this->get_option($key)); ?>" />
+				<input type="text" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($this->get_option($key)); ?>" />
 				<?php 
 				break;
 		}
@@ -273,8 +272,6 @@ class AKTT_Account {
 			// Start up a tweet object
 			$t = new AKTT_Tweet($tweet);
 
-$t->add();
-print_r($tweet); die();
 			if (!($result = $t->add())) {
 				AKTT::log('There was an error saving a tweet. Tweet ID: '.$t->id);
 				continue;
@@ -297,6 +294,13 @@ print_r($tweet); die();
 				AKTT::log('Creating a blog post for tweet ID: '.$t->id);
 				$t->create_blog_post($post_tweet_args);
 			}
+
+header('Content-type: text/plain');
+echo 'tweet id: '.$t->id()."\n";
+echo 'tweet post id: '.$t->post_id."\n";
+echo 'tweet blog post id: '.$t->blog_post_id."\n";
+die();
+
 		}
 	}
 	

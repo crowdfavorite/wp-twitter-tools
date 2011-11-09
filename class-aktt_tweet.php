@@ -73,7 +73,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function title() {
-		if (isset($this->data) {
+		if (isset($this->data)) {
 			$title = substr($this->data->text, 0, 50);
 			if (strlen($this->data->text) > 50) {
 				$title = $title.'...';
@@ -91,7 +91,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function content() {
-		return (isset($this->data) ? $this->data->text : null;
+		return (isset($this->data) ? $this->data->text : null);
 	}
 	
 	/**
@@ -100,7 +100,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function date() {
-		return (isset($this->data) ? $this->data->created_at : null;
+		return (isset($this->data) ? $this->data->created_at : null);
 	}
 	
 	/**
@@ -265,7 +265,7 @@ class AKTT_Tweet {
 			// 'post_date_gmt' => // @TODO 
 			'tax_input' => $tax_input,
 		));
-		
+
 		$post_id = wp_insert_post($data, true);
 		
 		if (is_wp_error($id)) {
@@ -289,7 +289,9 @@ class AKTT_Tweet {
 		
 		// Add a space if we have a prefix
 		$title_prefix = empty($title_prefix) ? '' : $title_prefix.' ';
-		$post_type = 'post';
+		
+//		$post_tags = array_map(array('AKTT_Tweet', 'get_tag_name'), array($post_tags));
+		$post_tags = array();
 		
 		// Build the post data
 		$data = array(
@@ -298,45 +300,39 @@ class AKTT_Tweet {
 			'post_author' => $post_author,
 			'tax_input' => array(
 				'category' => array($post_category),
-				'post_tag' => array_map(array('AKTT_Tweet', 'get_tag_name'), array($post_tags)),
+				'post_tag' => $post_tags,
 			),
 			'post_status' => 'publish',
-			'post_type' => $post_type,
+			'post_type' => 'post',
 			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
 			// 'post_date_gmt' => // @TODO 
 			'guid' => $this->guid().'-post'
 		);
 
-		$post_id = wp_insert_post($data, true);
+		$this->blog_post_id = wp_insert_post($data, true);
 		
-		if (is_wp_error($post_id)) {
-			AKTT::log('WP_Error:: '.$post_id->get_error_message());
+		if (is_wp_error($this->blog_post_id)) {
+			AKTT::log('WP_Error:: '.$this->blog_post_id->get_error_message());
 			return false;
 		}
-		
-		set_post_format($post_id, 'status');
 
-// TODO - is this the best way to do this?		
-		// Set the post's meta value for tweet post_id
-		update_post_meta($post_id, AKTT_Tweet::$prefix.'id', $this->id()); // twitter's tweet ID
-		update_post_meta($post_id, AKTT_Tweet::$prefix.'post_id', $this->post_id); // the post_type's post ID for the tweet
+		set_post_format($this->blog_post_id, 'status');
+
+		update_post_meta($this->blog_post_id, AKTT_Tweet::$prefix.'id', $this->id()); // twitter's tweet ID
+		update_post_meta($this->blog_post_id, AKTT_Tweet::$prefix.'post_id', $this->post_id); // twitter's post ID
 		
-		
+		// Add it to the tweet's post_meta as well
+		update_post_meta($this->post_id, AKTT_Tweet::$prefix.'blog_post_id', $this->blog_post_id);
+
 		// Let Social know to aggregate info about this post
 		foreach (AKTT::$accounts as $aktt_account) {
-			if ($aktt_account->user->id_str == $this->data->user->id_str) {
-				$account = new Social_Service_Twitter_Account($aktt_account);
+			if ($aktt_account->social_acct->id() == $this->data->user->id_str) {
+				$account = $aktt_account->social_acct;
 				break;
 			}
 		}
 		$social = Social::instance();
-		$social->add_broadcasted_id($post_id, 'twitter', $this->id(), $this->content(), $account, null);
-		
-		// Set the tweets property to the blog post' ID
-		$this->blog_post_id = $post_id;
-
-		// Add it to the tweet's post_meta as well
-		update_post_meta($this->post_id, AKTT_Tweet::$prefix.'blog_post_id', $post_id);
+		$social->add_broadcasted_id($this->blog_post_id, 'twitter', $this->id(), $this->content(), $account, null);
 		
 		// Let the account know we were successful
 		return true;
@@ -350,7 +346,11 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	function get_tag_name($tag_id) {
-		return get_term_field('name', $tag_id, 'post_tag', 'db');
+		$tag_name = get_term_field('name', $tag_id, 'post_tag', 'db');
+		if (is_wp_error($tag_name)) {
+			$tag_name = '';
+		}
+		return $tag_name;
 	}
 	
 }
