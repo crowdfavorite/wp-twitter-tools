@@ -248,7 +248,7 @@ class AKTT_Tweet {
 	 */
 	function add() {
 		$tax_input = array(
-			'aktt_account' => $this->username();
+			'aktt_account' => $this->username()
 		);
 		foreach ($this->hashtags() as $hashtag) {
 			$tax_input['aktt_hashtags'][] = $hashtag->text;
