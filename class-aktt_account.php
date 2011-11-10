@@ -42,8 +42,8 @@ class AKTT_Account {
 			'post_tags' => array( // tags to add to posts created from this acct
 				'label' => __('Post Tags', 'twitter-tools'),
 				'label_first' => true,
-				'value' => array(),
-				'type' 	=> 'is_tag',
+				'value' => '',
+				'type' 	=> 'tags',
 			),
 // 			'hashtag' => array( // hashtag to create blog posts from
 // 				'label' => __('Hashtags', 'twitter-tools'),
@@ -153,11 +153,9 @@ class AKTT_Account {
 				));
 				break;
 			case 'post_tags':
-				// The DB value is an integer.  We need to display the name for the input
-				$term = get_term_by('id', $this->get_option($key), 'post_tag');
-				$value = (!$term) ? '' : $term->name;
+				// The DB value is a comma separated list
 				?>
-				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($value); ?>" />  <?php _e('(comma separated)', 'twitter-tools'); ?>
+				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($this->get_option($key)); ?>" />  <?php _e('(comma separated)', 'twitter-tools'); ?>
 				<?php
 				break;
 			case 'hashtag':
@@ -223,8 +221,8 @@ class AKTT_Account {
 		// Use Social to download tweets for this account
 		$response = $this->service->request($this->social_acct, 'statuses/user_timeline', array(
 			'count' => apply_filters('aktt_account_api_download_count', 20), // default to twitter's default 
-			'include_entities' => 1,
-			'include_rts' => 1,
+			'include_entities' => 1, // include explicit hashtags and mentions
+			'include_rts' => 1, // include retweets
 		));
 		$content = $response->body();
 		if ($content->result == 'success') {
@@ -277,7 +275,7 @@ class AKTT_Account {
 				continue;
 			}
 
-			// Now conditionially create the associated blog post
+// Now conditionially create the associated blog post
 			if (
 				// If we are set to create blog posts
 				$this->get_option('create_posts') == 1
@@ -294,13 +292,6 @@ class AKTT_Account {
 				AKTT::log('Creating a blog post for tweet ID: '.$t->id);
 				$t->create_blog_post($post_tweet_args);
 			}
-
-header('Content-type: text/plain');
-echo 'tweet id: '.$t->id()."\n";
-echo 'tweet post id: '.$t->post_id."\n";
-echo 'tweet blog post id: '.$t->blog_post_id."\n";
-die();
-
 		}
 	}
 	

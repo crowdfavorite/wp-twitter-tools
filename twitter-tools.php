@@ -459,8 +459,8 @@ class AKTT {
 				}
 				
 				// Loop over each setting and sanitize
-				foreach (array_keys(AKTT_Account::$config) as $setting) {
-					$acct['settings'][$setting] = self::sanitize_account_setting($setting, $acct['settings'][$setting]);
+				foreach (array_keys(AKTT_Account::$config) as $key) {
+					$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
 				}
 			}
 		}
@@ -471,12 +471,12 @@ class AKTT {
 	}
 	
 	
-	static function sanitize_plugin_setting($setting, $value) {
-		return self::sanitize_setting($setting, $value, self::$default_settings[$setting]['type']);
+	static function sanitize_plugin_setting($key, $value) {
+		return self::sanitize_setting($key, $value, self::$default_settings[$key]['type']);
 	}
 	
-	static function sanitize_account_setting($setting, $value) {
-		return self::sanitize_setting($setting, $value, AKTT_Account::$config[$setting]['type']);
+	static function sanitize_account_setting($key, $value) {
+		return self::sanitize_setting($key, $value, AKTT_Account::$config[$key]['type']);
 	}
 	
 	
@@ -484,12 +484,12 @@ class AKTT {
 	 * Sanitizes a setting, based on a big switch statement 
 	 * that has each setting, and how to clean it.
 	 *
-	 * @param string $setting 
+	 * @param string $key 
 	 * @param mixed $value 
 	 * @param string $type - type of setting (int, etc.)
 	 * @return mixed - Clean value **If it matched a switch case**
 	 */
-	static function sanitize_setting($setting, $value, $type) {
+	static function sanitize_setting($key, $value, $type) {
 		switch ($type) {
 			case 'int':
 				$value = is_array($value) ? array_map('intval', $value) : intval($value);
@@ -497,9 +497,19 @@ class AKTT {
 			case 'no_html':
 				$value = is_array($value) ? array_map('wp_filter_nohtml_kses', $value) : wp_filter_nohtml_kses($value);
 				break;
-			case 'is_tag':
-				$term = get_term_by('name', $value, 'post_tag');
-				$value = (!$term) ? '' : $term->term_id;
+			case 'tags':
+				$value = trim($value);
+				if (!empty($value)) {
+					$tags_clean = array();
+					$tags_input = array_map('trim', explode(',', $value));
+					foreach ($tags_input as $tag) {
+						if (!empty($tag)) {
+							$tags_clean[] = $tag;
+						}
+					}
+					unset($tags_input);
+					$value = implode(', ', $tags_clean);
+				}
 				break;
 			case 'is_cat':
 				$term = get_term_by('id', $value, 'category');
@@ -786,8 +796,8 @@ jQuery(function($) {
 			ajaxurl + '?action=ajax-tag-search&tax=' + tax,
 			{ 
 				delay: 500, 
-				minchars: 2, 
-				multiple: false 
+				minchars: 2,
+				multiple: true 
 			}
 		);
 	});

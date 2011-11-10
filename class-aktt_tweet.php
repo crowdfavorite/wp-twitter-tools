@@ -36,7 +36,6 @@ class AKTT_Tweet {
 	function populate_from_db() {
 		$post = $this->get_post(AKTT::$post_type);
 
-		// @TODO error handle
 		if (is_wp_error($post) || empty($post)) {
 			return false;
 		}
@@ -196,7 +195,7 @@ class AKTT_Tweet {
 	 * @return obj|false 
 	 */
 	function get_post($post_type) {
-// TODO - search by GUID instead
+// TODO (future) - search by GUID instead?
 		$posts = get_posts(array(
 			'post_type' => $post_type,
 			'meta_key' => AKTT_Tweet::$prefix.'id',
@@ -248,7 +247,7 @@ class AKTT_Tweet {
 	 */
 	function add() {
 		$tax_input = array(
-			'aktt_account' => $this->username()
+			'aktt_account' => array($this->username())
 		);
 		foreach ($this->hashtags() as $hashtag) {
 			$tax_input['aktt_hashtags'][] = $hashtag->text;
@@ -283,7 +282,6 @@ class AKTT_Tweet {
 			'post_type' => AKTT::$post_type,
 			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
 			'guid' => $this->guid(),
-			// 'post_date_gmt' => // @TODO 
 			'tax_input' => $tax_input,
 		));
 
@@ -310,23 +308,19 @@ class AKTT_Tweet {
 		
 		// Add a space if we have a prefix
 		$title_prefix = empty($title_prefix) ? '' : $title_prefix.' ';
-		
-//		$post_tags = array_map(array('AKTT_Tweet', 'get_tag_name'), array($post_tags));
-		$post_tags = array();
-		
+
 		// Build the post data
 		$data = array(
-			'post_title' => $title_prefix.$this->title(), // @TODO how to build this (account config?)
-			'post_content' => $this->content(), // @TODO what should this be (account config?)
+			'post_title' => $title_prefix.$this->title(),
+			'post_content' => $this->content(),
 			'post_author' => $post_author,
 			'tax_input' => array(
 				'category' => array($post_category),
-				'post_tag' => $post_tags,
+				'post_tag' => array_map('trim', explode(',', $post_tags)),
 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
 			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
-			// 'post_date_gmt' => // @TODO 
 			'guid' => $this->guid().'-post'
 		);
 
