@@ -221,7 +221,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function is_retweet() {
-		return (bool) (substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted));
+		return (bool) (substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
 	}
 	
 	
