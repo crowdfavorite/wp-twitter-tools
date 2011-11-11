@@ -505,6 +505,9 @@ class AKTT {
 					foreach ($tags_input as $tag) {
 						if (!empty($tag)) {
 							$tags_clean[] = $tag;
+							if (!get_term_by('name', $tag, 'post_tag')) {
+								wp_insert_term($tag, 'post_tag');
+							}
 						}
 					}
 					unset($tags_input);
