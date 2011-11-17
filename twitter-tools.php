@@ -64,7 +64,7 @@ class AKTT {
 		
 		// Admin Hooks
 		add_action('admin_init', array('AKTT', 'init_settings'));
-		add_action('admin_init', array('AKTT', 'admin_request_handler'));
+		add_action('admin_init', array('AKTT', 'admin_controller'));
 		add_action('admin_notices', array('AKTT', 'admin_notices'));
 		add_action('admin_menu', array('AKTT', 'admin_menu'));
 		add_filter('plugin_action_links', array('AKTT', 'plugin_action_links'), 10, 2);
@@ -529,6 +529,11 @@ class AKTT {
 	 * @return void
 	 */
 	static function output_settings_page() {
+		global $wpdb;
+		$upgrade_needed = (bool) count($wpdb->get_results("
+			SELECT COUNT(*)
+			FROM {$wpdb->prefix}_ak_twitter
+		"));
 ?>
 		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
 			<?php screen_icon(); ?>
@@ -536,6 +541,12 @@ class AKTT {
 
 <?php
 		if (self::$enabled) {
+			if ($upgrade_needed || 1) {
+?>
+			<a href="<?php echo esc_url(admin_url('index.php?aktt_action=upgrade-3.0')); ?>" class="aktt-upgrade-3.0 button-secondary"><?php _e('Upgrade Previous Twitter Tools Data', 'twitter-tools'); ?></a>
+<?php
+			}
+			
 ?>
 			<a href="<?php echo esc_url(self::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Update Tweets Manually', 'twitter-tools'); ?></a>
 			
@@ -749,7 +760,7 @@ class AKTT {
 	 *
 	 * @return void
 	 */
-	function admin_request_handler(){
+	function admin_controller(){
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
 				case 'manual_tweet_download':
@@ -764,6 +775,24 @@ class AKTT {
 						'tweets_updated' => '1'),
 						admin_url('options-general.php')
 					));
+					break;
+				case 'upgrade-3.0':
+					// Permission checking
+					if (!current_user_can(self::$cap_options)) { 
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+					include('upgrade-3.0.php');
+					aktt_upgrade_30();
+					die();
+					break;
+				case 'upgrade-3.0-run':
+					// Permission checking
+					if (!current_user_can(self::$cap_options)) { 
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+					include('upgrade-3.0.php');
+// TODO
+					die();
 					break;
 			}
 		}
