@@ -782,7 +782,7 @@ class AKTT {
 					if (!current_user_can(self::$cap_options)) { 
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
 					}
-					include('upgrade-3.0.php');
+					include('upgrade/3.0.php');
 					aktt_upgrade_30();
 					die();
 					break;
@@ -796,7 +796,7 @@ class AKTT {
 						));
 						die();
 					}
-					include('upgrade-3.0.php');
+					include('upgrade/3.0.php');
 					$to_upgrade = aktt_upgrade_30_run();
 					header('Content-type: application/json');
 					echo json_encode(array(
