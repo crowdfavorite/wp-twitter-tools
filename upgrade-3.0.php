@@ -78,6 +78,9 @@ $username = 'foo';
 h3, p, p.step {
 	text-align: center;
 }
+.step {
+	margin-bottom: 35px;
+}
 .warning {
 	background: #ffc;
 	padding: 10px;

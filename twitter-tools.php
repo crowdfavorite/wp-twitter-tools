@@ -24,6 +24,7 @@ Author URI: http://crowdfavorite.com
 
 require_once('class-aktt_account.php');
 require_once('class-aktt_tweet.php');
+require_once('widget.php');
 
 class AKTT {
 	static $ver = '3.0dev';
@@ -859,6 +860,14 @@ jQuery(function($) {
 		if (self::$debug) {
 			error_log($msg);
 		}
+	}
+	
+	static function profile_url($username) {
+		return 'http://twitter.com/'.$username;
+	}
+
+	static function profile_link($username) {
+		return '<a href="'.esc_url(self::profile_url($username)).'">'.esc_html($username).'</a>';
 	}
 }
 add_action('init', array('AKTT', 'init'), 0);
