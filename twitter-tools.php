@@ -787,11 +787,21 @@ class AKTT {
 					break;
 				case 'upgrade-3.0-run':
 					// Permission checking
-					if (!current_user_can(self::$cap_options)) { 
-						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					if (!current_user_can(self::$cap_options) || !wp_verify_nonce($_GET['nonce'], 'upgrade-3.0-run')) { 
+						header('Content-type: application/json');
+						echo json_encode(array(
+							'result' => 'error',
+							'message' => __('Sorry, try again.', 'twitter-tools')
+						));
+						die();
 					}
 					include('upgrade-3.0.php');
-// TODO
+					$to_upgrade = aktt_upgrade_30_run();
+					header('Content-type: application/json');
+					echo json_encode(array(
+						'result' => 'success',
+						'to_upgrade' => $to_upgrade
+					));
 					die();
 					break;
 			}

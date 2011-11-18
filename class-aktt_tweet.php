@@ -117,7 +117,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function hashtags() {
-		return (isset($this->data) ? $this->data->entities->hashtags : array());
+		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->hashtags : array());
 	}
 	
 	/**
@@ -126,7 +126,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function mentions() {
-		return (isset($this->data) ? $this->data->entities->user_mentions : array());
+		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->user_mentions : array());
 	}
 	
 	/**
@@ -273,29 +273,26 @@ class AKTT_Tweet {
 		if (!$special) {
 			$tax_input['aktt_types'][] = 'Status';
 		}
-
+		
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
+			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->date())),
 			'guid' => $this->guid(),
 			'tax_input' => $tax_input,
 		));
-
-		$post_id = wp_insert_post($data, true);
+		
+		$this->post_id = wp_insert_post($data, true);
 		
 		if (is_wp_error($id)) {
-			AKTT::log('WP_Error:: '.$blog_post_id->get_error_message());
+			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
 			return false;
 		}
 		
-		update_post_meta($post_id, '_aktt_raw_data', $this->raw_data);
-
-		// Set this tweet's post ID
-		$this->post_id = $post_id;
+		update_post_meta($this->post_id, '_aktt_raw_data', $this->raw_data);
 		
 		// Allow things to hook in here
 		do_action('AKTT_Tweet_add', $this);
