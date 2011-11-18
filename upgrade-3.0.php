@@ -152,7 +152,7 @@ jQuery(function($) {
 					var $bar = $('.progress .bar');
 					var total = parseInt($bar.data('total'));
 					var remaining = total - parseInt(response.to_upgrade);
-					$bar.width(Math.ceil((remaining / total) * 400) + 'px');
+					$bar.animate({ width: Math.ceil((remaining / total) * 400) + 'px' });
 					if (remaining > 0) {
 // request again
 						$button.click();
