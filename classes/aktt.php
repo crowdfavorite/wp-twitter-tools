@@ -92,7 +92,7 @@ class AKTT {
 			),
 			'debug' => array(
 				'value' => 0,
-				'label' => __('Enable debug mode', 'twitter-tools'),
+				'label' => __('Write log messages to the PHP error log', 'twitter-tools'),
 				'label_first' => false,
 				'type' => 'int',
 			),
@@ -281,6 +281,101 @@ class AKTT {
 		return $post_link;
 	}
 	
+	
+	/**
+	 * Utility function to get tweets (used by shortcode, widget, etc.)
+	 *
+	 * @param array $args 
+	 * @return array
+	 */
+	static function get_tweets($args) {
+		$defaults = array(
+			'account' => array(),
+			'id' => null,
+			'count' => 5,
+			'offset' => 0,
+			'mentions' => array(),
+			'hashtags' => array(),
+			'include_rts' => 0,
+			'include_replies' => 0,
+		);
+// process tax data
+		$taxonomies = array(
+			'aktt_account' => 'account',
+			'aktt_hashtags' => 'hashtags',
+			'aktt_mentions' => 'mentions',
+		);
+		foreach ($taxonomies as $tax) {
+			if (isset($args[$tax])) {
+				$terms = array();
+				foreach(explode(',', $args[$tax]) as $term) {
+					$term = trim($term);
+					if (!empty($term)) {
+						$terms[] = $term;
+					}
+				}
+				$args[$tax] = $terms;
+			}
+		}
+		$params = array_merge($defaults, $args);
+		$tax_query = array(
+			'relation' => 'AND'
+		);
+// set accounts, mentions, hashtags
+		foreach ($taxonomies as $tax => $var) {
+			if (isset($params[$var]) && count($params[$var])) {
+				$query = array(
+					$tax,
+					'field' => 'slug',
+					'terms' => array()
+				);
+				foreach ($params[$var] as $term) {
+					$query['terms'][] = $term;
+				}
+				$tax_query[] = $query;
+			}
+		}
+		$type_terms = array();
+// initial, more efficient check
+		if (!$params['include_rts'] && !$params['include_rts']) {
+			$type_terms[] = 'status';
+		}
+		else {
+// set RTs
+			if (!$params['include_rts']) {
+				$type_terms[] = 'not-a-retweet';
+			}
+// set @replies
+			if (!$params['include_rts']) {
+				$type_terms[] = 'not-a-reply';
+			}
+		}
+		if (count($type_terms)) {
+			$tax_query[] = array(
+				'taxonomy' => 'aktt_types',
+				'field' => 'slug',
+				'terms' => $type_terms
+			);
+		}
+		$query_data = array(
+			'post_type' => 'aktt_tweet',
+			'posts_per_page' => $params['count'],
+			'offset' => $params['offset'],
+		);
+		if (count($tax_query) > 1) {
+			$query_data['tax_query'] = $tax_query;
+		}
+// set tweet ID
+		if (!empty($params['id'])) {
+			$query_data['meta_query'] = array(array(
+				'key' => AKTT_Tweet::$prefix.'id',
+				'value' => $params['id'],
+				'compare' => '='
+			));
+		}
+		$query = new WP_Query($query_data);
+		return $query->posts;
+	}
 	
 	/**
 	 * Prepends a "settings" link for our plugin on the plugins.php page
@@ -650,6 +745,21 @@ class AKTT {
 				self::$accounts[$obj_id] = $o;
 			}
 		}
+	}
+	
+	/**
+	 * Return the first account from the list, at random.
+	 *
+	 * @return mixed AKTT_Account object|bool
+	 */
+	static function default_account() {
+		self::get_social_accounts();
+		if (count(self::$accounts)) {
+			foreach (self::$accounts as $account) {
+				return $account;
+			}
+		}
+		return false;
 	}
 	
 	/**

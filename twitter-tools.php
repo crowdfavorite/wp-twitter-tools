@@ -29,16 +29,59 @@ require_once('widget.php');
 
 add_action('init', array('AKTT', 'init'), 0);
 
-// TODO - shortcode
-
-if (!function_exists('trim_add_elipsis')) {
-	function trim_add_elipsis($string, $limit = 100) {
-		if (strlen($string) > $limit) {
-			$string = substr($string, 0, $limit)."...";
-		}
-		return $string;
+/* Shortcode syntax
+ *	[aktt_tweets account="alexkingorg" count="5" offset="0" include_rts="1" include_replies="1" mentions="crowdfavorite,twittertools" hashtags="wordpress,plugin,twittertools"]
+ */
+function aktt_shortcode_tweets($args) {
+	if ($account = AKTT::default_account()) {
+		$username = $account->social_acct->name();
 	}
+	else { // no accounts, get out
+		return '';
+	}
+	$args = shortcode_atts(array(
+		'account' => $username,
+		'include_rts' => 0,
+		'include_replies' => 0,
+		'count' => 5
+	), $args);
+	$tweets = AKTT::get_tweets($args);
+	ob_start();
+	include('views/tweet-list.php');
+	return ob_get_clean();
 }
+add_shortcode('aktt_tweets', 'aktt_shortcode_tweets');
+
+/* Shortcode syntax
+ *	[aktt_tweet account="alexkingorg"]
+ *	[aktt_tweet id="138741523272577028"]
+ */
+function aktt_shortcode_tweet($args) {
+	if ($account = AKTT::default_account()) {
+		$username = $account->social_acct->name();
+	}
+	else { // no accounts, get out
+		return '';
+	}
+	$args = shortcode_atts(array(
+		'account' => $username,
+		'id' => null
+	), $args);
+// if we have an ID, only search by that
+	if (!empty($args['id'])) {
+		unset($args['account']);
+	}
+	$args['count'] = 1;
+	$tweets = AKTT::get_tweets($args);
+	if (count($tweets) != 1) {
+		return '';
+	}
+	$tweet = $tweets[0];
+	ob_start();
+	include('views/tweet.php');
+	return ob_get_clean();
+}
+add_shortcode('aktt_tweet', 'aktt_shortcode_tweet');
 
 /**
  * You must flush the rewrite rules to activate this action.

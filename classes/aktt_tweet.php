@@ -4,7 +4,7 @@ class AKTT_Tweet {
 	var $post_id = null;
 	var $raw_data = null;
 		
-	static $prefix = 'aktt_tweet_';
+	static $prefix = '_aktt_tweet_';
 	
 	/**
 	 * Set up the tweet with the ID from twitter
@@ -40,7 +40,7 @@ class AKTT_Tweet {
 			return false;
 		}
 		
-		$this->raw_data = get_post_meta($post->ID, '_aktt_raw_data', true);
+		$this->raw_data = get_post_meta($post->ID, self::$prefix.'raw_data', true);
 		$this->data = json_decode($this->raw_data);
 	}
 	
@@ -198,7 +198,7 @@ class AKTT_Tweet {
 // TODO (future) - search by GUID instead?
 		$posts = get_posts(array(
 			'post_type' => $post_type,
-			'meta_key' => AKTT_Tweet::$prefix.'id',
+			'meta_key' => self::$prefix.'id',
 			'meta_value' => $this->id,
 		));
 		return is_array($posts) ? array_shift($posts) : false;
@@ -280,19 +280,20 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->date())),
+			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
 			'guid' => $this->guid(),
 			'tax_input' => $tax_input,
 		));
 		
 		$this->post_id = wp_insert_post($data, true);
 		
-		if (is_wp_error($id)) {
+		if (is_wp_error($this->post_id)) {
 			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
 			return false;
 		}
 		
-		update_post_meta($this->post_id, '_aktt_raw_data', $this->raw_data);
+		update_post_meta($this->post_id, self::$prefix.'id', $this->id());
+		update_post_meta($this->post_id, self::$prefix.'raw_data', $this->raw_data);
 		
 		// Allow things to hook in here
 		do_action('AKTT_Tweet_add', $this);
@@ -317,7 +318,7 @@ class AKTT_Tweet {
 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
-			'post_date' => date('Y-m-d H:i:s', AKTT_Tweet::twdate_to_time($this->meta['created_at'])),
+			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
 			'guid' => $this->guid().'-post'
 		);
 
@@ -330,11 +331,11 @@ class AKTT_Tweet {
 
 		set_post_format($this->blog_post_id, 'status');
 
-		update_post_meta($this->blog_post_id, AKTT_Tweet::$prefix.'id', $this->id()); // twitter's tweet ID
-		update_post_meta($this->blog_post_id, AKTT_Tweet::$prefix.'post_id', $this->post_id); // twitter's post ID
+		update_post_meta($this->blog_post_id, self::$prefix.'id', $this->id()); // twitter's tweet ID
+		update_post_meta($this->blog_post_id, self::$prefix.'post_id', $this->post_id); // twitter's post ID
 		
 		// Add it to the tweet's post_meta as well
-		update_post_meta($this->post_id, AKTT_Tweet::$prefix.'blog_post_id', $this->blog_post_id);
+		update_post_meta($this->post_id, self::$prefix.'blog_post_id', $this->blog_post_id);
 
 		// Let Social know to aggregate info about this post
 		foreach (AKTT::$accounts as $aktt_account) {
