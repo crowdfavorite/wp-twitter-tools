@@ -33,13 +33,15 @@ class AKTT {
 		self::register_taxonomies();
 
 		// General Hooks
+		add_action('wp', array('AKTT', 'controller'), 1);
+		add_filter('the_post', array('AKTT', 'the_post'));
 		add_filter('post_type_link', array('AKTT', 'get_tweet_permalink'), 10, 2);
 		add_action('social_account_disconnected', array('AKTT', 'social_account_disconnected'), 10, 2);
 		add_action('social_broadcast_response', array('AKTT', 'social_broadcast_response'), 10, 3);
 		
 		// Admin Hooks
-		add_action('admin_init', array('AKTT', 'init_settings'));
-		add_action('admin_init', array('AKTT', 'admin_controller'));
+		add_action('admin_init', array('AKTT', 'init_settings'), 0);
+		add_action('admin_init', array('AKTT', 'admin_controller'), 1);
 		add_action('admin_notices', array('AKTT', 'admin_notices'));
 		add_action('admin_menu', array('AKTT', 'admin_menu'));
 		add_filter('plugin_action_links', array('AKTT', 'plugin_action_links'), 10, 2);
@@ -93,6 +95,12 @@ class AKTT {
 			'debug' => array(
 				'value' => 0,
 				'label' => __('Write log messages to the PHP error log', 'twitter-tools'),
+				'label_first' => false,
+				'type' => 'int',
+			),
+			'credit' => array(
+				'value' => 1,
+				'label' => __('Give Twitter Tools credit', 'twitter-tools'),
 				'label_first' => false,
 				'type' => 'int',
 			),
@@ -301,15 +309,26 @@ class AKTT {
 		);
 // process tax data
 		$taxonomies = array(
-			'aktt_account' => 'account',
-			'aktt_hashtags' => 'hashtags',
-			'aktt_mentions' => 'mentions',
+			'aktt_account' => array(
+				'var' => 'account',
+				'strip' => array()
+			),
+			'aktt_hashtags' => array(
+				'var' => 'hashtags',
+				'strip' => array('#')
+			),
+			'aktt_mentions' => array(
+				'var' => 'mentions',
+				'strip' => '@'
+			)
 		);
-		foreach ($taxonomies as $tax) {
+		foreach ($taxonomies as $data) {
+			$tax = $data['var'];
+			$strip = $data['strip'];
 			if (isset($args[$tax])) {
 				$terms = array();
 				foreach(explode(',', $args[$tax]) as $term) {
-					$term = trim($term);
+					$term = trim(str_replace($strip, '', $term));
 					if (!empty($term)) {
 						$terms[] = $term;
 					}
@@ -322,10 +341,11 @@ class AKTT {
 			'relation' => 'AND'
 		);
 // set accounts, mentions, hashtags
-		foreach ($taxonomies as $tax => $var) {
+		foreach ($taxonomies as $tax => $data) {
+			$var = $data['var'];
 			if (isset($params[$var]) && count($params[$var])) {
 				$query = array(
-					$tax,
+					'taxonomy' => $tax,
 					'field' => 'slug',
 					'terms' => array()
 				);
@@ -337,16 +357,22 @@ class AKTT {
 		}
 		$type_terms = array();
 // initial, more efficient check
-		if (!$params['include_rts'] && !$params['include_rts']) {
+		if (!$params['include_rts'] && !$params['include_replies']) {
 			$type_terms[] = 'status';
 		}
 		else {
 // set RTs
-			if (!$params['include_rts']) {
+			if ($params['include_rts']) {
+				$type_terms[] = 'retweet';
+			}
+			else {
 				$type_terms[] = 'not-a-retweet';
 			}
 // set @replies
-			if (!$params['include_rts']) {
+			if ($params['include_replies']) {
+				$type_terms[] = 'reply';
+			}
+			else {
 				$type_terms[] = 'not-a-reply';
 			}
 		}
@@ -362,6 +388,7 @@ class AKTT {
 			'posts_per_page' => $params['count'],
 			'offset' => $params['offset'],
 		);
+		// relation = AND set on initiation, so count is always at least 1 
 		if (count($tax_query) > 1) {
 			$query_data['tax_query'] = $tax_query;
 		}
@@ -373,8 +400,21 @@ class AKTT {
 				'compare' => '='
 			));
 		}
+error_log(print_r($args, true));
+error_log(print_r($query_data, true));
 		$query = new WP_Query($query_data);
 		return $query->posts;
+	}
+	
+	function the_post($post) {
+		if ($post->post_type == self::$post_type) {
+			if ($raw_data = get_post_meta($post->ID, AKTT_Tweet::$prefix.'raw_data', true)) {
+				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
+			}
+			else {
+				$post->tweet = new AKTT_Tweet(false);
+			}
+		}
 	}
 	
 	/**
@@ -600,10 +640,29 @@ class AKTT {
 	 */
 	static function output_settings_page() {
 		global $wpdb;
-		$upgrade_needed = (bool) count($wpdb->get_results("
-			SELECT COUNT(*)
-			FROM {$wpdb->prefix}_ak_twitter
+		$wpdb->aktt = $wpdb->prefix.'ak_twitter';
+		$upgrade_needed = in_array($wpdb->aktt, $wpdb->get_col("
+			SHOW TABLES
 		"));
+		if ($upgrade_needed) {
+			$upgrade_col = false;
+			$cols = $wpdb->get_results("
+				DESCRIBE $wpdb->aktt
+			");
+			foreach ($cols as $col) {
+				if ($col->Field == 'upgrade_30') {
+					$upgrade_col = true;
+					break;
+				}
+			}
+			if ($upgrade_col) {
+				$upgrade_needed = (bool) $wpdb->get_var("
+					SELECT COUNT(*)
+					FROM $wpdb->aktt
+					WHERE upgrade_30 = 0
+				");
+			}
+		}
 ?>
 		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
 			<?php screen_icon(); ?>
@@ -756,7 +815,9 @@ class AKTT {
 		self::get_social_accounts();
 		if (count(self::$accounts)) {
 			foreach (self::$accounts as $account) {
-				return $account;
+				if ($account->get_option('enabled')) {
+					return $account;
+				}
 			}
 		}
 		return false;
@@ -794,8 +855,22 @@ class AKTT {
 		// iterate over each account and download the tweets
 		foreach (self::$accounts as $id => $acct) {
 			// Download the tweets for that acct
-			if ($acct->get_option('enabled') == 1 && $tweets = $acct->download_tweets()) {
-				$acct->save_tweets($tweets);
+			if ($acct->get_option('enabled')) {
+				// could time out with lots of accounts, so a new request for each
+				$url = site_url('index.php?'.http_build_query(array(
+					'aktt_action' => 'download_account_tweets',
+					'acct_id' => $id,
+					'social_api_key' => Social::option('system_cron_api_key')
+				)));
+				self::log('Downloading tweets for '.$acct->social_acct->name().': '.$url);
+				wp_remote_get(
+					$url,
+					array(
+						'timeout' => 0.01,
+						'blocking' => false,
+						'sslverify' => apply_filters('https_local_ssl_verify', true),
+					)
+				);
 			}
 		}
 	}
@@ -826,16 +901,27 @@ class AKTT {
 	
 	
 	/**
-	 * Load JS resources necessary for admin... only on the twitter tools' settings page
+	 * Request handler for admin
 	 *
-	 * @param string $hook_suffix 
 	 * @return void
 	 */
-	function admin_enqueue_scripts($hook_suffix) {
-		add_action('admin_footer', array('AKTT', 'admin_js'));
-		if ($hook_suffix == 'settings_page_twitter-tools') {
-			wp_enqueue_script('suggest');
-			add_action('admin_footer', array('AKTT', 'admin_js_suggest'));
+	function controller(){
+		if (isset($_GET['aktt_action'])) {
+			switch ($_GET['aktt_action']) {
+				case 'download_account_tweets':
+					if (empty($_GET['acct_id']) || stripslashes($_GET['social_api_key']) != Social::option('system_cron_api_key')) {
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+					$acct_id = intval($_GET['acct_id']);
+					self::get_social_accounts();
+					if (isset(self::$accounts[$acct_id])) {
+						if ($tweets = self::$accounts[$acct_id]->download_tweets()) {
+							self::$accounts[$acct_id]->save_tweets($tweets);
+						}
+					}
+					die();
+					break;
+			}
 		}
 	}
 	
@@ -866,7 +952,7 @@ class AKTT {
 					if (!current_user_can(self::$cap_options)) { 
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
 					}
-					include('upgrade/3.0.php');
+					include(AKTT_PATH.'/upgrade/3.0.php');
 					aktt_upgrade_30();
 					die();
 					break;
@@ -880,7 +966,7 @@ class AKTT {
 						));
 						die();
 					}
-					include('upgrade/3.0.php');
+					include(AKTT_PATH.'/upgrade/3.0.php');
 					$to_upgrade = aktt_upgrade_30_run();
 					header('Content-type: application/json');
 					echo json_encode(array(
@@ -892,6 +978,22 @@ class AKTT {
 			}
 		}
 	}
+	
+	
+	/**
+	 * Load JS resources necessary for admin... only on the twitter tools' settings page
+	 *
+	 * @param string $hook_suffix 
+	 * @return void
+	 */
+	function admin_enqueue_scripts($hook_suffix) {
+		add_action('admin_footer', array('AKTT', 'admin_js'));
+		if ($hook_suffix == 'settings_page_twitter-tools') {
+			wp_enqueue_script('suggest');
+			add_action('admin_footer', array('AKTT', 'admin_js_suggest'));
+		}
+	}
+	
 	
 	/**
 	 * Output the admin-side JavaScript

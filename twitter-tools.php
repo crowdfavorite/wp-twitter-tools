@@ -22,15 +22,25 @@ Author URI: http://crowdfavorite.com
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 // **********************************************************************
 
-require_once('classes/aktt.php');
-require_once('classes/aktt_account.php');
-require_once('classes/aktt_tweet.php');
-require_once('widget.php');
+@define('AKTT_PATH', plugin_dir_path(__FILE__));
+
+require_once(AKTT_PATH.'/classes/aktt.php');
+require_once(AKTT_PATH.'/classes/aktt_account.php');
+require_once(AKTT_PATH.'/classes/aktt_tweet.php');
+require_once(AKTT_PATH.'/widget.php');
 
 add_action('init', array('AKTT', 'init'), 0);
 
 /* Shortcode syntax
- *	[aktt_tweets account="alexkingorg" count="5" offset="0" include_rts="1" include_replies="1" mentions="crowdfavorite,twittertools" hashtags="wordpress,plugin,twittertools"]
+ *	[aktt_tweets 
+ *		account="alexkingorg"
+ *		count="5" 
+ *		offset="0"
+ *		include_rts="1"
+ *		include_replies="1"
+ *		mentions="crowdfavorite,twittertools"
+ *		hashtags="wordpress,plugin,twittertools"
+ *	]
  */
 function aktt_shortcode_tweets($args) {
 	if ($account = AKTT::default_account()) {
@@ -43,7 +53,9 @@ function aktt_shortcode_tweets($args) {
 		'account' => $username,
 		'include_rts' => 0,
 		'include_replies' => 0,
-		'count' => 5
+		'count' => 5,
+		'mentions' => '',
+		'hashtags' => '',
 	), $args);
 	$tweets = AKTT::get_tweets($args);
 	ob_start();
@@ -103,3 +115,39 @@ add_shortcode('aktt_tweet', 'aktt_shortcode_tweet');
 // 	$wp_rewrite->rules = $rules + $wp_rewrite->rules;
 // }
 // add_action('generate_rewrite_rules', 'aktt_add_tweet_rewrites');
+
+function aktt_test() {
+	do_shortcode('[aktt_tweets account="alexkingorgtest" include_replies="1" mentions="alexkingorg, twittertools"]');
+//	do_shortcode('[aktt_tweets account="alexkingorgtest" include_replies="1"]');
+
+// 	wp_insert_post(array(
+// 		'post_title' => 'test tweet Titles'.time(),
+// 		'post_content' => 'test tweet '.time(),
+// 		'post_status' => 'publish',
+// 		'post_type' => 'aktt_tweet',
+// 		'post_date' => date('Y-m-d H:i:s'),
+// 		'tax_input' => array(
+// 			'aktt_account' => 'alexkingorgtest',
+// 			'aktt_hashtags' => '',
+// 			'aktt_mentions' => '',
+// 			'aktt_types' => 'Not a Reply,Not a Retweet,Not a Social Broadcast,Status',
+// 		)
+// 	));
+
+// 	wp_insert_post(array(
+// 		'post_title' => 'test tweet with date'.time(),
+// 		'post_content' => 'test tweet '.time(),
+// 		'post_status' => 'publish',
+// 		'post_type' => 'aktt_tweet',
+//     'post_date' => '2011-11-26 17:18:16',
+//     'guid' => 'http://twitter-140585192128647168-'.microtime(),
+// 		'tax_input' => array(
+// 			'aktt_account' => array('alexkingorgtest'),
+// 			'aktt_hashtags' => array(),
+// 			'aktt_mentions' => array(),
+// 			'aktt_types' => array('not-a-reply', 'not-a-retweet', 'not-a-social-broadcast', 'status'),
+// 		)
+// 	), true);
+	die();
+}
+// add_action('wp', 'aktt_test');

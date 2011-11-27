@@ -247,7 +247,10 @@ class AKTT_Tweet {
 	 */
 	function add() {
 		$tax_input = array(
-			'aktt_account' => array($this->username())
+			'aktt_account' => array($this->username()),
+			'aktt_hashtags' => array(),
+			'aktt_mentions' => array(),
+			'aktt_types' => array(),
 		);
 		foreach ($this->hashtags() as $hashtag) {
 			$tax_input['aktt_hashtags'][] = $hashtag->text;
@@ -258,20 +261,27 @@ class AKTT_Tweet {
 		$special = 0;
 		if ($this->is_reply()) {
 			$special++;
-			$tax_input['aktt_types'][] = 'Reply';
+			$tax_input['aktt_types'][] = 'reply';
 		}
 		else {
-			$tax_input['aktt_types'][] = 'Not a Reply';
+			$tax_input['aktt_types'][] = 'not-a-reply';
 		}
 		if ($this->is_retweet()) {
 			$special++;
-			$tax_input['aktt_types'][] = 'Retweet';
+			$tax_input['aktt_types'][] = 'retweet';
 		}
 		else {
-			$tax_input['aktt_types'][] = 'Not a Retweet';
+			$tax_input['aktt_types'][] = 'not-a-retweet';
+		}
+		if ($this->was_broadcast()) {
+			$special++;
+			$tax_input['aktt_types'][] = 'social-broadcast';
+		}
+		else {
+			$tax_input['aktt_types'][] = 'not-a-social-broadcast';
 		}
 		if (!$special) {
-			$tax_input['aktt_types'][] = 'Status';
+			$tax_input['aktt_types'][] = 'status';
 		}
 		
 		// Build the post data
@@ -280,16 +290,25 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
+			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->date()) + (get_option('gmt_offset') * 3600)),
 			'guid' => $this->guid(),
-			'tax_input' => $tax_input,
+//			'tax_input' => $tax_input, // see below...
 		));
 		
 		$this->post_id = wp_insert_post($data, true);
-		
+
 		if (is_wp_error($this->post_id)) {
 			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
 			return false;
+		}
+
+// have to set up taxonomies after the insert in case we are in a context without
+// a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
+
+		foreach ($tax_input as $tax => $terms) {
+			if (count($terms)) {
+				wp_set_post_terms($this->post_id, $terms, $tax);
+			}
 		}
 		
 		update_post_meta($this->post_id, self::$prefix.'id', $this->id());
