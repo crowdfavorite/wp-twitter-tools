@@ -312,7 +312,7 @@ class AKTT_Tweet {
 		}
 		
 		update_post_meta($this->post_id, self::$prefix.'id', $this->id());
-		update_post_meta($this->post_id, self::$prefix.'raw_data', $this->raw_data);
+		update_post_meta($this->post_id, self::$prefix.'raw_data', addslashes($this->raw_data));
 		
 		// Allow things to hook in here
 		do_action('AKTT_Tweet_add', $this);

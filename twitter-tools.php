@@ -2,7 +2,7 @@
 /*
 Plugin Name: Twitter Tools
 Plugin URI: http://crowdfavorite.com/wordpress/plugins/twitter-tools/
-Description: A complete integration between your WordPress blog and Twitter. Bring your tweets into your blog and pass your blog posts to Twitter. Show your tweets in your sidebar. Relies on <a href="http://wordpress.org/extend/plugins/social/">Social</a>.
+Description: An integration between your WordPress site and Twitter. Create posts from your tweets. Show your tweets in your sidebar. Relies on <a href="http://wordpress.org/extend/plugins/social/">Social</a>.
 Version: 3.0dev
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
