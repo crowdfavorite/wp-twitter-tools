@@ -62,7 +62,6 @@ function aktt_shortcode_tweets($args) {
 	include('views/tweet-list.php');
 	return ob_get_clean();
 }
-add_shortcode('aktt_tweets', 'aktt_shortcode_tweets');
 
 /* Shortcode syntax
  *	[aktt_tweet account="alexkingorg"]
@@ -93,7 +92,12 @@ function aktt_shortcode_tweet($args) {
 	include('views/tweet.php');
 	return ob_get_clean();
 }
-add_shortcode('aktt_tweet', 'aktt_shortcode_tweet');
+
+// included for compatibility only
+function aktt_sidebar_tweets($count = 5, $form = null) {
+	_deprecated_function(__FUNCTION__, '3.0', 'aktt_shortcode_tweets()');
+	echo do_shortcode('[aktt_tweets count="'.intval($count).'"]');
+}
 
 /**
  * You must flush the rewrite rules to activate this action.
@@ -116,38 +120,3 @@ add_shortcode('aktt_tweet', 'aktt_shortcode_tweet');
 // }
 // add_action('generate_rewrite_rules', 'aktt_add_tweet_rewrites');
 
-function aktt_test() {
-	do_shortcode('[aktt_tweets account="alexkingorgtest" include_replies="1" mentions="alexkingorg, twittertools"]');
-//	do_shortcode('[aktt_tweets account="alexkingorgtest" include_replies="1"]');
-
-// 	wp_insert_post(array(
-// 		'post_title' => 'test tweet Titles'.time(),
-// 		'post_content' => 'test tweet '.time(),
-// 		'post_status' => 'publish',
-// 		'post_type' => 'aktt_tweet',
-// 		'post_date' => date('Y-m-d H:i:s'),
-// 		'tax_input' => array(
-// 			'aktt_account' => 'alexkingorgtest',
-// 			'aktt_hashtags' => '',
-// 			'aktt_mentions' => '',
-// 			'aktt_types' => 'Not a Reply,Not a Retweet,Not a Social Broadcast,Status',
-// 		)
-// 	));
-
-// 	wp_insert_post(array(
-// 		'post_title' => 'test tweet with date'.time(),
-// 		'post_content' => 'test tweet '.time(),
-// 		'post_status' => 'publish',
-// 		'post_type' => 'aktt_tweet',
-//     'post_date' => '2011-11-26 17:18:16',
-//     'guid' => 'http://twitter-140585192128647168-'.microtime(),
-// 		'tax_input' => array(
-// 			'aktt_account' => array('alexkingorgtest'),
-// 			'aktt_hashtags' => array(),
-// 			'aktt_mentions' => array(),
-// 			'aktt_types' => array('not-a-reply', 'not-a-retweet', 'not-a-social-broadcast', 'status'),
-// 		)
-// 	), true);
-	die();
-}
-// add_action('wp', 'aktt_test');

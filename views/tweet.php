@@ -1,10 +1,15 @@
 <?php
 
+// TODO 
+// - link usernames if no @anyhere script
+// - link hashtags
+// - link URLs (replace t.co URLs)
+
 setup_postdata($tweet);
 the_content();
 
 if ($tweet->tweet->is_reply()) {
-	echo 'REPLY!!';
+	echo '<b>REPLY!!</b>';
 }
 
 // if (!empty($tweet->tw_reply_username)) {

@@ -16,14 +16,16 @@ class AKTT_Widget extends WP_Widget {
 	function form($instance) {
 		$account_options = array();
 		foreach (AKTT::$accounts as $account) {
-			$account_options[] = $account->social_acct->name();
+			if ($account->get_option('enabled')) {
+				$account_options[] = $account->social_acct->name();
+			}
 		}
 		$defaults = array(
+			'title' => __('Recent Tweets', 'twitter-tools'),
 			'account' => '',
-			'count' => 3,
+			'count' => 5,
 			'include_rts' => 0,
 			'include_replies' => 0,
-			'credit' => 1,
 		);
 		foreach ($defaults as $k => $v) {
 			if (!isset($instance[$k])) {
@@ -32,8 +34,12 @@ class AKTT_Widget extends WP_Widget {
 		}
 ?>
 <p>
+	<label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Title', 'twitter-tools'); ?></label>
+	<input type="text" name="<?php echo $this->get_field_name('title'); ?>" id="<?php echo $this->get_field_id('title'); ?>" value="<?php echo esc_attr($instance['title']); ?>" class="widefat" />
+</p>
+<p>
 	<label for="<?php echo $this->get_field_id('account'); ?>"><?php _e('Account', 'twitter-tools'); ?></label>
-	<select name="<?php echo $this->get_field_id('account'); ?>" id="<?php echo $this->get_field_id('account'); ?>">
+	<select name="<?php echo $this->get_field_name('account'); ?>" id="<?php echo $this->get_field_id('account'); ?>">
 <?php
 		foreach ($account_options as $account_option) {
 ?>
@@ -65,20 +71,13 @@ class AKTT_Widget extends WP_Widget {
 	<input type="radio" name="<?php echo $this->get_field_name('include_replies'); ?>" id="<?php echo $this->get_field_id('include_replies_0'); ?>" value="0" <?php checked($instance['include_replies'], 0); ?> />
 	<label for="<?php echo $this->get_field_id('include_replies_0'); ?>"><?php _e('No', 'twitter-tools'); ?></label>
 </p>
-<p><?php _e('Give Twitter Tools Credit?', 'twitter-tools'); ?></p>
-<p>
-	<input type="radio" name="<?php echo $this->get_field_name('credit'); ?>" id="<?php echo $this->get_field_id('credit_1'); ?>" value="1" <?php checked($instance['credit'], 1); ?> />
-	<label for="<?php echo $this->get_field_id('credit_1'); ?>"><?php _e('Yes', 'twitter-tools'); ?></label>
-	&nbsp;
-	<input type="radio" name="<?php echo $this->get_field_name('credit'); ?>" id="<?php echo $this->get_field_id('credit_0'); ?>" value="0" <?php checked($instance['credit'], 0); ?> />
-	<label for="<?php echo $this->get_field_id('credit_0'); ?>"><?php _e('No', 'twitter-tools'); ?></label>
-</p>
 <?php
 	}
 
 	function update($new_instance, $old_instance) {
 		// processes widget options to be saved
 		$instance = $old_instance;
+		$instance['title'] = strip_tags($new_instance['title']);
 		$instance['account'] = strip_tags($new_instance['account']);
 		if (!($count = intval($new_instance['count']))) {
 			$count = 1;
@@ -86,16 +85,16 @@ class AKTT_Widget extends WP_Widget {
 		$instance['count'] = $count;
 		$instance['include_rts'] = (int) $new_instance['include_rts'];
 		$instance['include_replies'] = (int) $new_instance['include_replies'];
-		$instance['credit'] = (int) $new_instance['credit'];
 		return $instance;
 	}
 
 	function widget($args, $instance) {
-		// outputs the content of the widget
-		$tweets = new WP_Query(array(
-			'post_type' => AKTT::$post_type,
-		));
+		extract($args);
+		$username = $instance['account'];
+		$tweets = AKTT::get_tweets($instance);
+		echo $before_widget.$before_title.$instance['title'].$after_title;
 		include('views/tweet-list.php');
+		echo $after_widget;
 	}
 
 }

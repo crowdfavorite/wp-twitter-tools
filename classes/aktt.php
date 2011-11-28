@@ -32,6 +32,9 @@ class AKTT {
 		self::register_post_type();
 		self::register_taxonomies();
 
+		add_shortcode('aktt_tweets', 'aktt_shortcode_tweets');
+		add_shortcode('aktt_tweet', 'aktt_shortcode_tweet');
+
 		// General Hooks
 		add_action('wp', array('AKTT', 'controller'), 1);
 		add_filter('the_post', array('AKTT', 'the_post'));
@@ -307,7 +310,6 @@ class AKTT {
 			'include_rts' => 0,
 			'include_replies' => 0,
 		);
-// process tax data
 		$taxonomies = array(
 			'aktt_account' => array(
 				'var' => 'account',
@@ -337,61 +339,11 @@ class AKTT {
 			}
 		}
 		$params = array_merge($defaults, $args);
-		$tax_query = array(
-			'relation' => 'AND'
-		);
-// set accounts, mentions, hashtags
-		foreach ($taxonomies as $tax => $data) {
-			$var = $data['var'];
-			if (isset($params[$var]) && count($params[$var])) {
-				$query = array(
-					'taxonomy' => $tax,
-					'field' => 'slug',
-					'terms' => array()
-				);
-				foreach ($params[$var] as $term) {
-					$query['terms'][] = $term;
-				}
-				$tax_query[] = $query;
-			}
-		}
-		$type_terms = array();
-// initial, more efficient check
-		if (!$params['include_rts'] && !$params['include_replies']) {
-			$type_terms[] = 'status';
-		}
-		else {
-// set RTs
-			if ($params['include_rts']) {
-				$type_terms[] = 'retweet';
-			}
-			else {
-				$type_terms[] = 'not-a-retweet';
-			}
-// set @replies
-			if ($params['include_replies']) {
-				$type_terms[] = 'reply';
-			}
-			else {
-				$type_terms[] = 'not-a-reply';
-			}
-		}
-		if (count($type_terms)) {
-			$tax_query[] = array(
-				'taxonomy' => 'aktt_types',
-				'field' => 'slug',
-				'terms' => $type_terms
-			);
-		}
 		$query_data = array(
 			'post_type' => 'aktt_tweet',
 			'posts_per_page' => $params['count'],
 			'offset' => $params['offset'],
 		);
-		// relation = AND set on initiation, so count is always at least 1 
-		if (count($tax_query) > 1) {
-			$query_data['tax_query'] = $tax_query;
-		}
 // set tweet ID
 		if (!empty($params['id'])) {
 			$query_data['meta_query'] = array(array(
@@ -400,9 +352,54 @@ class AKTT {
 				'compare' => '='
 			));
 		}
-error_log(print_r($args, true));
-error_log(print_r($query_data, true));
-		$query = new WP_Query($query_data);
+		else {
+// process tax data
+			$tax_query = array(
+				'relation' => 'AND'
+			);
+// set accounts, mentions, hashtags
+			foreach ($taxonomies as $tax => $data) {
+				$var = $data['var'];
+				if (isset($params[$var]) && count($params[$var])) {
+					$query = array(
+						'taxonomy' => $tax,
+						'field' => 'slug',
+						'terms' => array()
+					);
+					foreach ($params[$var] as $term) {
+						$query['terms'][] = $term;
+					}
+					$tax_query[] = $query;
+				}
+			}
+// always hide broadcasts - can be overridden with filter below
+			$tax_query[] = array(
+				'taxonomy' => 'aktt_types',
+				'field' => 'slug',
+				'terms' => array('social-broadcast'),
+				'operator' => 'NOT IN'
+			);
+			$type_terms = array();
+// initial, more efficient check
+			if (!$params['include_rts'] && !$params['include_replies']) {
+				$type_terms[] = 'status';
+			}
+			else {
+				$type_terms[] = ($params['include_rts'] ? 'retweet' : 'not-a-retweet');
+				$type_terms[] = ($params['include_replies'] ? 'reply' : 'not-a-reply');
+			}
+			if (count($type_terms)) {
+				$tax_query[] = array(
+					'taxonomy' => 'aktt_types',
+					'field' => 'slug',
+					'terms' => $type_terms,
+				);
+			}
+			$query_data['tax_query'] = $tax_query;
+		}
+// error_log(print_r($args, true));
+// error_log(print_r($query_data, true));
+		$query = new WP_Query(apply_filters('aktt_get_tweets', $query_data));
 		return $query->posts;
 	}
 	
