@@ -231,9 +231,12 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function was_broadcast() {
-		$was_broadcast = true;
-		if (isset($this->data)) {
+		$was_broadcast = false;
+		if (isset($this->data) && !empty($this->data->source)) {
 			$was_broadcast = (bool) (strpos($this->data->source, 'sopresto.mailchimp.com') !== false);
+		}
+		else {
+			$was_broadcast = (bool) (strpos($this->content(), home_url()) !== false);
 		}
 		return $was_broadcast;
 	}

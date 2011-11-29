@@ -38,6 +38,7 @@ class AKTT {
 		// General Hooks
 		add_action('wp', array('AKTT', 'controller'), 1);
 		add_filter('the_post', array('AKTT', 'the_post'));
+		add_filter('the_posts', array('AKTT', 'the_posts'));
 		add_filter('post_type_link', array('AKTT', 'get_tweet_permalink'), 10, 2);
 		add_action('social_account_disconnected', array('AKTT', 'social_account_disconnected'), 10, 2);
 		add_action('social_broadcast_response', array('AKTT', 'social_broadcast_response'), 10, 3);
@@ -397,14 +398,18 @@ class AKTT {
 			}
 			$query_data['tax_query'] = $tax_query;
 		}
-// error_log(print_r($args, true));
-// error_log(print_r($query_data, true));
 		$query = new WP_Query(apply_filters('aktt_get_tweets', $query_data));
 		return $query->posts;
 	}
 	
-	function the_post($post) {
-		if ($post->post_type == self::$post_type) {
+	/**
+	 * Attach tweet data to post
+	 *
+	 * @param stdClass $post
+	 * @return stdClass
+	 */
+	static function the_post($post) {
+		if ($post->post_type == self::$post_type && empty($post->tweet)) {
 			if ($raw_data = get_post_meta($post->ID, AKTT_Tweet::$prefix.'raw_data', true)) {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
 			}
@@ -412,6 +417,20 @@ class AKTT {
 				$post->tweet = new AKTT_Tweet(false);
 			}
 		}
+		return $post;
+	}
+	
+	/**
+	 * Attach tweet data to posts
+	 *
+	 * @param array $posts
+	 * @return array
+	 */
+	static function the_posts($posts) {
+		foreach ($posts as &$post) {
+			AKTT::the_post($post);
+		}
+		return $posts;
 	}
 	
 	/**
