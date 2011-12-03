@@ -1065,7 +1065,7 @@ jQuery(function($) {
 	}
 	
 	static function profile_url($username) {
-		return 'http://twitter.com/'.$username;
+		return 'http://twitter.com/'.urlencode($username);
 	}
 
 	static function profile_link($username) {
@@ -1081,7 +1081,7 @@ jQuery(function($) {
 
 	static function hashtag_url($hashtag) {
 		$hashtag = self::hashtag_prefix($hashtag);
-		return 'http://search.twitter.com/search?q='.urlencode($hashtag);
+		return 'http://twitter.com/search?q='.urlencode($hashtag);
 	}
 
 	static function hashtag_link($hashtag) {
@@ -1094,6 +1094,10 @@ jQuery(function($) {
 			$hashtag = '#'.$hashtag;
 		}
 		return $hashtag;
+	}
+	
+	static function status_url($username, $id) {
+		return 'http://twitter.com/'.urlencode($username).'/status/'.urlencode($id);
 	}
 
 }

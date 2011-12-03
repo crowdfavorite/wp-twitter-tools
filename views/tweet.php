@@ -1,10 +1,5 @@
 <?php
 
-// TODO 
-// - link usernames if no @anyhere script
-// - link hashtags
-// - link URLs (replace t.co URLs)
-
 $content = $tweet->post_content;
 if (isset($tweet->tweet)) {
 	$content = $tweet->tweet->link_entities();
@@ -13,14 +8,9 @@ if (isset($tweet->tweet)) {
 echo wptexturize($content);
 
 if (isset($tweet->tweet) && $tweet->tweet->is_reply()) {
-	echo '<b>REPLY!!</b>';
+?>
+ <a href="<?php echo esc_url(AKTT::status_url($tweet->tweet->reply_screen_name(), $tweet->tweet->reply_id())); ?>" class="aktt_tweet_reply"><?php printf(__('in reply to %s', 'twitter-tools'), esc_html($tweet->tweet->reply_screen_name())); ?></a>
+<?php
 }
-
-// if (!empty($tweet->tw_reply_username)) {
-// 	$output .= 	' <a href="'.aktt_status_url($tweet->tw_reply_username, $tweet->tw_reply_tweet).'" class="aktt_tweet_reply">'.sprintf(__('in reply to %s', 'twitter-tools'), $tweet->tw_reply_username).'</a>';
-// }
-// $time_display = aktt_relativeTime($tweet->tw_created_at, 3);
-// 
-// $output .= ' <a href="'.aktt_status_url($aktt->twitter_username, $tweet->tw_id).'" class="aktt_tweet_time">'.$time_display.'</a>';
-// 
-// echo $output;
+?>
+ <a href="<?php echo esc_url(AKTT::status_url($tweet->tweet->username(), $tweet->tweet->id())); ?>" class="aktt_tweet_time"><?php echo sprintf(__('%s ago', 'twitter-tools'), human_time_diff(strtotime($tweet->post_date_gmt))); ?></a>

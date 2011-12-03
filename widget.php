@@ -93,7 +93,7 @@ class AKTT_Widget extends WP_Widget {
 		$username = $instance['account'];
 		$tweets = AKTT::get_tweets($instance);
 		echo $before_widget.$before_title.$instance['title'].$after_title;
-		include('views/tweet-list.php');
+		include('views/widget.php');
 		echo $after_widget;
 	}
 

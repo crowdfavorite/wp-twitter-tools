@@ -112,6 +112,24 @@ class AKTT_Tweet {
 	}
 	
 	/**
+	 * Accessor function for tweet reply-to username
+	 *
+	 * @return string
+	 */
+	public function reply_screen_name() {
+		return (isset($this->data) ? $this->data->in_reply_to_screen_name : null);
+	}
+	
+	/**
+	 * Accessor function for tweet reply-to tweet id
+	 *
+	 * @return string
+	 */
+	public function reply_id() {
+		return (isset($this->data) ? $this->data->in_reply_to_status_id_str : null);
+	}
+	
+	/**
 	 * Accessor function for tweet's hashtags
 	 *
 	 * @return string
