@@ -130,6 +130,15 @@ class AKTT_Tweet {
 	}
 	
 	/**
+	 * Accessor function for tweet's URLS
+	 *
+	 * @return string
+	 */
+	public function urls() {
+		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->urls : array());
+	}
+	
+	/**
 	 * Takes the twitter date format and gets a timestamp from it
 	 *
 	 * @param string $date - "Fri Aug 05 20:33:38 +0000 2011"
@@ -239,6 +248,64 @@ class AKTT_Tweet {
 			$was_broadcast = (bool) (strpos($this->content(), home_url()) !== false);
 		}
 		return $was_broadcast;
+	}
+	
+	function link_entities() {
+		$entities = array();
+// mentions
+		$anywhere = Social::option('twitter_anywhere_api_key');
+		if (empty($anywhere) || is_feed()) {
+			foreach ($this->mentions() as $entity) {
+				$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
+					'find' => $entity->screen_name,
+					'replace' => AKTT::profile_link($entity->screen_name),
+					'start' => $entity->indices[0],
+					'end' => $entity->indices[1],
+				);
+			}
+		}
+// hashtags
+		foreach ($this->hashtags() as $entity) {
+			$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
+				'find' => $entity->text,
+				'replace' => AKTT::hashtag_link($entity->text),
+				'start' => $entity->indices[0],
+				'end' => $entity->indices[1],
+			);
+		}
+// URLs
+		foreach ($this->urls() as $entity) {
+			$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
+				'find' => $entity->url,
+				'replace' => '<a href="'.esc_url($entity->expanded_url).'">'.esc_html($entity->display_url).'</a>',
+				'start' => $entity->indices[0],
+				'end' => $entity->indices[1],
+			);
+		}
+		ksort($entities);
+
+		$str = $this->content();
+		$diff = 0;
+		foreach ($entities as $entity) {
+			$start = $entity['start'] + $diff;
+			$end = $entity['end'] + $diff;
+// $log = array();
+// $log[] = 'diff: '.$diff;
+// $log[] = 'entity start: '.$entity['start'];
+// $log[] = 'entity start chars: '.substr($this->content(), $entity['start'], 3);
+// $log[] = 'diff start: '.$start;
+// $log[] = 'diff start chars: '.substr($str, $start, 3);
+// $log[] = 'entity end: '.$entity['end'];
+// $log[] = 'diff end: '.$end;
+// $log[] = 'find len: '.strlen($entity['find']);
+// $log[] = 'find: '.htmlspecialchars($entity['find']);
+// $log[] = 'replace len: '.strlen($entity['replace']);
+// $log[] = 'replace: '.htmlspecialchars($entity['replace']);
+// echo '<p>'.implode('<br>', $log).'</p>';
+			$str = substr_replace($str, $entity['replace'], $start, ($end - $start));
+			$diff += strlen($entity['replace']) - ($end - $start);
+		}
+		return $str;
 	}
 	
 	

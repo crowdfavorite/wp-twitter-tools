@@ -1069,6 +1069,35 @@ jQuery(function($) {
 	}
 
 	static function profile_link($username) {
-		return '<a href="'.esc_url(self::profile_url($username)).'">'.esc_html($username).'</a>';
+		return '<a href="'.esc_url(self::profile_url($username)).'">'.esc_html(self::profile_prefix($username)).'</a>';
 	}
+
+	static function profile_prefix($username, $prefix = '@') {
+		if (substr($username, 0, 1) != '#') {
+			$username = '@'.$username;
+		}
+		return $username;
+	}
+
+	static function hashtag_url($hashtag) {
+		$hashtag = self::hashtag_prefix($hashtag);
+		return 'http://search.twitter.com/search?q='.urlencode($hashtag);
+	}
+
+	static function hashtag_link($hashtag) {
+		$hashtag = self::hashtag_prefix($hashtag);
+		return '<a href="'.esc_url(self::hashtag_url($hashtag)).'">'.esc_html($hashtag).'</a>';
+	}
+	
+	static function hashtag_prefix($hashtag, $prefix = '#') {
+		if (substr($hashtag, 0, 1) != '#') {
+			$hashtag = '#'.$hashtag;
+		}
+		return $hashtag;
+	}
+
 }
+
+
+
+

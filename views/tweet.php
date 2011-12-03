@@ -5,7 +5,12 @@
 // - link hashtags
 // - link URLs (replace t.co URLs)
 
-echo wptexturize($tweet->post_content);
+$content = $tweet->post_content;
+if (isset($tweet->tweet)) {
+	$content = $tweet->tweet->link_entities();
+}
+
+echo wptexturize($content);
 
 if (isset($tweet->tweet) && $tweet->tweet->is_reply()) {
 	echo '<b>REPLY!!</b>';
