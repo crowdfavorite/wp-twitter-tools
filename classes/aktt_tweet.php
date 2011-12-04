@@ -4,8 +4,6 @@ class AKTT_Tweet {
 	var $post_id = null;
 	var $raw_data = null;
 		
-	static $prefix = '_aktt_tweet_';
-	
 	/**
 	 * Set up the tweet with the ID from twitter
 	 *
@@ -40,7 +38,8 @@ class AKTT_Tweet {
 			return false;
 		}
 		
-		$this->raw_data = get_post_meta($post->ID, self::$prefix.'raw_data', true);
+		$this->post = $post;
+		$this->raw_data = get_post_meta($this->post->ID, '_aktt_tweet_raw_data', true);
 		$this->data = json_decode($this->raw_data);
 	}
 	
@@ -73,7 +72,7 @@ class AKTT_Tweet {
 	 */
 	public function title() {
 		if (isset($this->data)) {
-			$title = substr($this->data->text, 0, 50);
+			$title = trim(substr($this->data->text, 0, 50));
 			if (strlen($this->data->text) > 50) {
 				$title = $title.'...';
 			}
@@ -157,6 +156,18 @@ class AKTT_Tweet {
 	}
 	
 	/**
+	 * Accessor function for tweet's status URL on Twitter
+	 *
+	 * @return string
+	 */
+	public function status_url() {
+		if ($username = $this->username() && $id = $this->id()) {
+			return AKTT::status_url($username, $id);
+		}
+		return null;
+	}
+	
+	/**
 	 * Takes the twitter date format and gets a timestamp from it
 	 *
 	 * @param string $date - "Fri Aug 05 20:33:38 +0000 2011"
@@ -221,14 +232,26 @@ class AKTT_Tweet {
 	 *
 	 * @return obj|false 
 	 */
-	function get_post($post_type) {
+	function get_post($post_type = null) {
+		if (isset($this->post)) {
+			return $this->post;
+		}
+		if (is_null($post_type)) {
+			$post_type = AKTT::$post_type;
+		}
 // TODO (future) - search by GUID instead?
 		$posts = get_posts(array(
 			'post_type' => $post_type,
-			'meta_key' => self::$prefix.'id',
+			'meta_key' => '_aktt_tweet_id',
 			'meta_value' => $this->id,
 		));
-		return is_array($posts) ? array_shift($posts) : false;
+		if (!is_array($posts)) {
+			return false;
+		}
+		else {
+			$this->post = array_shift($posts);
+			return $this->post;
+		}
 	}
 	
 
@@ -399,8 +422,8 @@ class AKTT_Tweet {
 			}
 		}
 		
-		update_post_meta($this->post_id, self::$prefix.'id', $this->id());
-		update_post_meta($this->post_id, self::$prefix.'raw_data', addslashes($this->raw_data));
+		update_post_meta($this->post_id, '_aktt_tweet_id', $this->id());
+		update_post_meta($this->post_id, '_aktt_tweet_raw_data', addslashes($this->raw_data));
 		
 		// Allow things to hook in here
 		do_action('AKTT_Tweet_add', $this);
@@ -408,6 +431,32 @@ class AKTT_Tweet {
 		return true;
 	}
 	
+	
+	/**
+	 * Replace the raw Twitter data for a tweet
+	 *
+	 * @param stdClass $tweet_data 
+	 * @return bool
+	 */
+	function update_twitter_data($tweet_data) {
+		$this->raw_data = json_encode($tweet_data);
+		$post = $this->get_post();
+		if ($post && !empty($post->ID)) {
+			if (update_post_meta($post->ID, '_aktt_tweet_raw_data', addslashes($this->raw_data))) {
+				delete_post_meta($post->ID, '_aktt_30_backfill_needed', 1);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Create blog post from tweet
+	 *
+	 * @param array $args 
+	 * @return bool
+	 */
 	function create_blog_post($args = array()) {
 		extract($args);
 		
@@ -438,11 +487,11 @@ class AKTT_Tweet {
 
 		set_post_format($this->blog_post_id, 'status');
 
-		update_post_meta($this->blog_post_id, self::$prefix.'id', $this->id()); // twitter's tweet ID
-		update_post_meta($this->blog_post_id, self::$prefix.'post_id', $this->post_id); // twitter's post ID
+		update_post_meta($this->blog_post_id, '_aktt_tweet_id', $this->id()); // twitter's tweet ID
+		update_post_meta($this->blog_post_id, '_aktt_tweet_post_id', $this->post_id); // twitter's post ID
 		
 		// Add it to the tweet's post_meta as well
-		update_post_meta($this->post_id, self::$prefix.'blog_post_id', $this->blog_post_id);
+		update_post_meta($this->post_id, '_aktt_tweet_blog_post_id', $this->blog_post_id);
 
 		// Let Social know to aggregate info about this post
 		foreach (AKTT::$accounts as $aktt_account) {

@@ -217,6 +217,7 @@ function aktt_upgrade_30_run($count = 10) {
 			if ($t->add()) {
 // add meta - upgraded tweet
 				update_post_meta($t->post_id, '_aktt_upgraded_30', 1);
+				update_post_meta($t->post_id, '_aktt_30_backfill_needed', 1);
 				$upgraded[] = intval($tweet->id);
 			}
 		}
