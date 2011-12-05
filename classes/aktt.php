@@ -53,13 +53,14 @@ class AKTT {
 		
 		// Cron Hooks
 		add_action('social_cron_15', array('AKTT', 'import_tweets'));
+		add_action('aktt_backfill_tweets', array('AKTT', 'backfill_tweets'));
 		
 		/* Set our default settings.  We need to do this at init() so 
 		that any text domains (i18n) are registered prior to us setting 
 		the labels. */
 		self::set_default_settings();
 		
-		// Set logging to what's in the plugin settings
+		// Set logging to admin screen settings
 		self::$debug = self::get_option('debug');
 	}
 	
@@ -679,6 +680,20 @@ class AKTT {
 				");
 			}
 		}
+// check to see if CRON for backfilling data is scheduled
+		if (wp_next_scheduled('aktt_tweet_backfill') === false) {
+// check to see if it should be
+			$query = new WP_Query(array(
+				'post_type' => AKTT::$post_type,
+				'posts_per_page' => 10,
+				'meta_key' => '_aktt_30_backfill_needed',
+			));
+			if (count($query->posts)) {
+// schedule
+				wp_schedule_event(time() + 900, 'hourly', 'aktt_backfill_tweets');
+			}
+			unset($query);
+		}
 ?>
 		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
 			<?php screen_icon(); ?>
@@ -905,6 +920,9 @@ class AKTT {
 			'meta_key' => '_aktt_30_backfill_needed',
 		));
 		if (!count($query->posts)) {
+			if (($timestamp = wp_next_scheduled('aktt_backfill_tweets')) !== false) {
+				wp_unschedule_event($timestamp, 'aktt_backfill_tweets');
+			}
 			return false;
 		}
 		foreach ($query->posts as $post) {
