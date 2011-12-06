@@ -587,7 +587,9 @@ class AKTT {
 				
 				// Loop over each setting and sanitize
 				foreach (array_keys(AKTT_Account::$config) as $key) {
-					$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					if (isset($acct['settings'][$key])) {
+						$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					}
 				}
 			}
 		}
@@ -681,7 +683,7 @@ class AKTT {
 			}
 		}
 // check to see if CRON for backfilling data is scheduled
-		if (wp_next_scheduled('aktt_tweet_backfill') === false) {
+		if (wp_next_scheduled('aktt_backfill_tweets') === false) {
 // check to see if it should be
 			$query = new WP_Query(array(
 				'post_type' => AKTT::$post_type,
@@ -914,6 +916,7 @@ class AKTT {
 	 * @return bool
 	 */
 	function backfill_tweets($count = 10) {
+		self::log('#### Backfilling tweets ####');
 		$query = new WP_Query(array(
 			'post_type' => AKTT::$post_type,
 			'posts_per_page' => 10,

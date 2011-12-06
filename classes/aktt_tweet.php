@@ -424,6 +424,7 @@ class AKTT_Tweet {
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
+			'post_slug' => $this->id(),
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
@@ -458,6 +459,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function update_twitter_data($tweet_data) {
+		$this->data = $tweet_data;
 		$this->raw_data = json_encode($tweet_data);
 		$post = $this->get_post();
 		if ($post && !empty($post->ID)) {
@@ -512,16 +514,25 @@ class AKTT_Tweet {
 		
 		// Add it to the tweet's post_meta as well
 		update_post_meta($this->post_id, '_aktt_tweet_blog_post_id', $this->blog_post_id);
-
+		
 		// Let Social know to aggregate info about this post
+		$account = false;
 		foreach (AKTT::$accounts as $aktt_account) {
 			if ($aktt_account->social_acct->id() == $this->data->user->id_str) {
 				$account = $aktt_account->social_acct;
 				break;
 			}
 		}
-		$social = Social::instance();
-		$social->add_broadcasted_id($this->blog_post_id, 'twitter', $this->id(), $this->content(), $account, null);
+		if ($account) {
+			Social::instance()->add_broadcasted_id(
+				$this->blog_post_id,
+				'twitter',
+				$this->id(),
+				$this->content(),
+				$account,
+				null
+			);
+		}
 		
 		// Let the account know we were successful
 		return true;
