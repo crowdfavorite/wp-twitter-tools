@@ -59,7 +59,7 @@ function aktt_shortcode_tweets($args) {
 	), $args);
 	$tweets = AKTT::get_tweets($args);
 	ob_start();
-	include('views/tweet-list.php');
+	include(AKTT_PATH.'/views/tweet-list.php');
 	return ob_get_clean();
 }
 
@@ -89,7 +89,7 @@ function aktt_shortcode_tweet($args) {
 	}
 	$tweet = $tweets[0];
 	ob_start();
-	include('views/tweet.php');
+	include(AKTT_PATH.'/views/tweet.php');
 	return ob_get_clean();
 }
 

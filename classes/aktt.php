@@ -72,42 +72,40 @@ class AKTT {
 	 */
 	static function set_default_settings() {
 		// Set default settings
+		$yn_options = array(
+			'1' => __('Yes', 'twitter-tools'),
+			'0' => __('No', 'twitter-tools')
+		);
 		self::$default_settings = array(
-			'post_type_admin_ui' => array(
-				'value' => false,
-				'label' => __('Enable admin UI for tweets', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
+			'tweet_admin_ui' => array(
+				'name' => 'enable_admin_ui',
+				'value' => 1,
+				'label' => __('Show admin screens for tweets', 'twitter-tools'),
+				'type' => 'radio',
+				'options' => $yn_options,
 			),
-			'post_type_visibility' => array(
-				'value' => false,
-				'label' => __('Make imported tweets public', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
-			),
-			'taxonomy_admin_ui' => array(
-				'value' => false,
-				'label' => __('Enable admin UI for tweet taxonomies', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
-			),
-			'taxonomy_visibility' => array(
-				'value' => false,
-				'label' => __('Make tweet taxonomies public', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
-			),
-			'debug' => array(
-				'value' => 0,
-				'label' => __('Write log messages to the PHP error log', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
+			'tweet_visibility' => array(
+				'name' => 'tweet_visibility',
+				'value' => 1,
+				'label' => __('Create URLs for tweets', 'twitter-tools'),
+				'help' => '<span class="cfct-help">'.site_url('tweet/12345678').'</span>',
+				'type' => 'radio',
+				'options' => $yn_options,
 			),
 			'credit' => array(
+				'name' => 'credit',
 				'value' => 1,
 				'label' => __('Give Twitter Tools credit', 'twitter-tools'),
-				'label_first' => false,
-				'type' => 'int',
+				'type' => 'radio',
+				'options' => $yn_options,
+			),
+			'debug' => array(
+				'name' => 'debug',
+				'value' => 0,
+				'label' => __('Enable debug logging', 'twitter-tools'),
+				'help' => '<span class="cfct-help">'.__('written to the PHP error log').'</span>',
+				'type' => 'radio',
+				'options' => $yn_options,
 			),
 		);
 	}
@@ -161,8 +159,8 @@ class AKTT {
 			'supports' => array(
 				'editor',
 			),
-			'public' => (bool) self::get_option('post_type_visibility'),
-			'show_ui' => (bool) self::get_option('post_type_admin_ui'),
+			'public' => (bool) self::get_option('tweet_visibility'),
+			'show_ui' => (bool) self::get_option('tweet_admin_ui'),
 			'rewrite' => array(
 				'slug' => 'tweets',
 				'with_front' => false
@@ -179,8 +177,8 @@ class AKTT {
 	 */
 	static function register_taxonomies() {
 		$defaults = array(
-			'public' => (bool) self::get_option('taxonomy_visibility'),
-			'show_ui' => (bool) self::get_option('taxonomy_admin_ui'),
+			'public' => (bool) self::get_option('tweet_visibility'),
+			'show_ui' => (bool) self::get_option('tweet_admin_ui'),
 		);
 		$taxonomies = array(
 			'aktt_account' => array_merge($defaults, array(
@@ -498,21 +496,20 @@ class AKTT {
 			self::$plugin_options_key, // option name
 			array('AKTT', 'sanitize_plugin_settings') // Sanitize callback
 		);
-
-		// Register our parent setting (it contains an array of all our plugin-wide settings)
+		
+		// Add a section of settings to Twitter Tools' settings page
+		add_settings_section(
+			self::$plugin_settings_section_slug, // group id
+			null, // title
+			array('AKTT', 'output_settings_section_text'), // callback for text
+			self::$menu_page_slug // Page Handle
+		);
+		
+		// Register our account settings
 		register_setting(
 			self::$menu_page_slug, // Page it belongs to
 			AKTT_Account::$settings_option_name, // option name
 			array('AKTT', 'sanitize_account_settings') // Sanitize callback
-		);
-
-
-		// Add a section of settings to Twitter Tools' settings page
-		add_settings_section(
-			self::$plugin_settings_section_slug, // group id
-			__('General Plugin Settings', 'twitter-tools'), // title
-			array('AKTT', 'output_settings_section_text'), // callback for text
-			self::$menu_page_slug // Page Handle
 		);
 		
 		// Add a section for Account setting
@@ -522,19 +519,17 @@ class AKTT {
 			array('AKTT', 'output_account_settings_section'), // callback for text
 			self::$menu_page_slug // Page Handle
 		);
-
+		
 		// Register our settings' fields with WP
-		foreach (self::$default_settings as $setting => $details) {
+		foreach (self::$default_settings as $key => $field) {
 			// Add the settings to the proper group
 			add_settings_field(
-				$setting, // unique ID for the field...not necessarily the option_name
-				$details['label'],
+				$key, // unique ID for the field...not necessarily the option_name
+				$field['label'],
 				array('AKTT', 'output_settings_field'), // Callback to output the actual HTML field
 				self::$menu_page_slug, // Page Handle
 				self::$plugin_settings_section_slug, // Settings Group
-				array(
-					'setting' => $setting,
-				)
+				$field
 			);
 		}
 		
@@ -696,39 +691,7 @@ class AKTT {
 			}
 			unset($query);
 		}
-?>
-		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
-			<?php screen_icon(); ?>
-			<h2><?php _e('Twitter Tools', 'twitter-tools'); ?></h2>
-
-<?php
-		if (self::$enabled) {
-			if ($upgrade_needed || 1) {
-?>
-			<a href="<?php echo esc_url(admin_url('index.php?aktt_action=upgrade-3.0')); ?>" class="aktt-upgrade-3.0 button-secondary"><?php _e('Upgrade Previous Twitter Tools Data', 'twitter-tools'); ?></a>
-<?php
-			}
-			
-?>
-			<a href="<?php echo esc_url(self::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Update Tweets Manually', 'twitter-tools'); ?></a>
-			
-			<form method="post" action="options.php">
-			
-<?php 
-			// Output the nonces, and hidden fields for the page
-			settings_fields(self::$menu_page_slug);
-			
-			// Output the visible settings fields
-			do_settings_sections(self::$menu_page_slug);
-?>
-				
-				<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'twitter-tools'); ?>" />
-			</form>
-<?php
-		}
-?>
-		</div><!-- /wrap -->
-<?php
+		include(AKTT_PATH.'/views/admin.php');
 	}
 	
 	
@@ -738,7 +701,6 @@ class AKTT {
 	 * @return void
 	 */
 	static function output_settings_section_text() {
-		echo '<p>'.__('Settings applied to plugin.', 'twitter-tools').'</p>';
 	}
 	
 	
@@ -749,8 +711,78 @@ class AKTT {
 	 * @return void
 	 */
 	static function output_settings_field($args) {
-		extract($args); // $setting name is passed here
-		echo '<input type="checkbox" name="'.esc_attr(self::$plugin_options_key.'['.$setting.']').'" value="1" '.checked('1', self::get_option($setting), false).' />'."\n";
+	
+		$type = $args['type'];
+		$value = $args['value'];
+		$name = $args['name'];
+		$id = empty($args['id']) ? $args['name'] : $args['id'];
+		$class = empty($args['class']) ? '' : ' class="'.esc_attr($args['class']).'"';
+		$html = '';
+		
+		switch ($type) {
+			case 'text':
+				$html .= '<input id="'.esc_attr($id).'" name="'.esc_attr($name).'" type="text" value="'.esc_attr($value).'"'.$class.' />';
+				break;
+			case 'password':
+				$html .= '<input id="'.esc_attr($id).'" name="'.esc_attr($name).'" type="password" value="'.esc_attr($value).'"'.$class.' />';
+				break;
+			case 'textarea':
+				empty($args['cols']) ? $cols = 60 : $cols = (int) $args['cols'];
+				empty($args['rows']) ? $rows = 5 : $rows = (int) $args['rows'];
+				$html .= '<textarea id="'.esc_attr($id).'" name="'.esc_attr($name).'" cols="'.$cols.'" rows="'.$rows.'"'.$class.'>'.esc_textarea($value).'</textarea>';
+				break;
+			case 'select':
+				$html .= '<select id="'.esc_attr($id).'" name="'.esc_attr($name).'"'.$class.'>';
+				$options = $args['options'];
+				foreach ($options as $opt_value => $opt_label) {
+					$html .= '<option value="'.esc_attr($opt_value).'"'.selected($opt_value, $value, false).'>'.esc_html($opt_label).'</option>';
+				}
+				$html .= '</select>';
+				break;
+			case 'radio':
+				$options = $args['options'];
+				if (is_array($options)) {
+					$html .= '<ul>';
+					foreach ($options as $opt_value => $opt_label) {
+						$html .= '
+						<li>
+							<label for="'.esc_attr($name.'-'.$opt_value).'">
+								<input type="radio" name="'.esc_attr($name).'" value="'.esc_attr($opt_value).'" id="'.esc_attr($name.'-'.$opt_value).'"'.checked($opt_value, $value, false).' />
+								'.esc_html($opt_label).'
+							</label>
+						</li>';
+					}
+					$html .= '</ul>';
+				}
+				break;
+			case 'checkbox':
+				$options = $args['options'];
+				if (is_array($options)) {
+					$html .= '<ul>';
+					foreach ($options as $opt_value => $opt_label) {
+						$html .= '
+						<li>
+							<label for="'.esc_attr($name.'-'.$opt_value).'">
+								<input type="checkbox" name="'.esc_attr($name.'['.$opt_value.']').'" value="'.esc_attr($opt_value).'" id="'.esc_attr($name.'-'.$opt_value).'"'.checked($opt_value, $value[$opt['id']], false).' />
+								'.esc_html($opt_label).'
+							</label>
+						</li>';
+					}
+					$html .= '</ul>';
+				}
+				break;
+			case 'hidden':
+				$html .= '<input id="'.esc_attr($id).'" type="hidden" name="'.esc_attr($name).'" value="'.esc_attr($value).'" class="'.esc_attr($class).'" />';
+				break;
+			default:
+				$html .= apply_filters('cfct_option_'.$type, $html, $args);
+				break;
+		}
+		if (!empty($args['help'])) {
+			$html .= $args['help'];
+		}
+		
+		echo $html;
 	}
 	
 	

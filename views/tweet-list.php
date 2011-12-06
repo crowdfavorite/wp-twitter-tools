@@ -4,7 +4,7 @@
 if (count($tweets) > 0) {
 	foreach ($tweets as $tweet) {
 		echo '		<li>'."\n";
-		include('tweet.php');
+		include(AKTT_PATH.'/views/tweet.php');
 		echo '</li>'."\n";
 	}
 }
