@@ -4,8 +4,6 @@ class AKTT_Tweet {
 	var $post_id = null;
 	var $raw_data = null;
 		
-	static $prefix = '_aktt_tweet_';
-	
 	/**
 	 * Set up the tweet with the ID from twitter
 	 *
@@ -40,7 +38,8 @@ class AKTT_Tweet {
 			return false;
 		}
 		
-		$this->raw_data = get_post_meta($post->ID, self::$prefix.'raw_data', true);
+		$this->post = $post;
+		$this->raw_data = get_post_meta($this->post->ID, '_aktt_tweet_raw_data', true);
 		$this->data = json_decode($this->raw_data);
 	}
 	
@@ -73,7 +72,7 @@ class AKTT_Tweet {
 	 */
 	public function title() {
 		if (isset($this->data)) {
-			$title = substr($this->data->text, 0, 50);
+			$title = trim(substr($this->data->text, 0, 50));
 			if (strlen($this->data->text) > 50) {
 				$title = $title.'...';
 			}
@@ -90,7 +89,13 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function content() {
-		return (isset($this->data) ? $this->data->text : null);
+		if (isset($this->data) && isset($this->data->text)) {
+			return $this->data->text;
+		}
+		if (isset($this->post) && isset($this->post->post_content)) {
+			return $this->post->post_content;
+		}
+		return null;
 	}
 	
 	/**
@@ -154,6 +159,18 @@ class AKTT_Tweet {
 	 */
 	public function urls() {
 		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->urls : array());
+	}
+	
+	/**
+	 * Accessor function for tweet's status URL on Twitter
+	 *
+	 * @return string
+	 */
+	public function status_url() {
+		if ($username = $this->username() && $id = $this->id()) {
+			return AKTT::status_url($username, $id);
+		}
+		return null;
 	}
 	
 	/**
@@ -221,14 +238,28 @@ class AKTT_Tweet {
 	 *
 	 * @return obj|false 
 	 */
-	function get_post($post_type) {
+	function get_post($post_type = null) {
+		if (isset($this->post)) {
+			$this->post_id = $this->post->ID;
+			return $this->post;
+		}
+		if (is_null($post_type)) {
+			$post_type = AKTT::$post_type;
+		}
 // TODO (future) - search by GUID instead?
 		$posts = get_posts(array(
 			'post_type' => $post_type,
-			'meta_key' => self::$prefix.'id',
+			'meta_key' => '_aktt_tweet_id',
 			'meta_value' => $this->id,
 		));
-		return is_array($posts) ? array_shift($posts) : false;
+		if (!is_array($posts)) {
+			return false;
+		}
+		else {
+			$this->post = array_shift($posts);
+			$this->post_id = $this->post->ID;
+			return $this->post;
+		}
 	}
 	
 
@@ -328,12 +359,15 @@ class AKTT_Tweet {
 	
 	
 	/**
-	 * Creates an aktt_tweet post_type with its meta
+	 * Parse tweet data and set taxonomies accordingly
 	 *
 	 * @param array $args 
 	 * @return void
 	 */
-	function add() {
+	function set_taxonomies() {
+		if (empty($this->post_id)) {
+			return;
+		}
 		$tax_input = array(
 			'aktt_account' => array($this->username()),
 			'aktt_hashtags' => array(),
@@ -371,10 +405,26 @@ class AKTT_Tweet {
 		if (!$special) {
 			$tax_input['aktt_types'][] = 'status';
 		}
-		
+		$tax_input = apply_filters('aktt_tweet_tax_input', $tax_input);
+		foreach ($tax_input as $tax => $terms) {
+			if (count($terms)) {
+				wp_set_post_terms($this->post_id, $terms, $tax);
+			}
+		}
+	}
+	
+	
+	/**
+	 * Creates an aktt_tweet post_type with its meta
+	 *
+	 * @param array $args 
+	 * @return void
+	 */
+	function add() {
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
+			'post_slug' => $this->id(),
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
@@ -382,9 +432,7 @@ class AKTT_Tweet {
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
-		
 		$this->post_id = wp_insert_post($data, true);
-
 		if (is_wp_error($this->post_id)) {
 			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
 			return false;
@@ -392,22 +440,45 @@ class AKTT_Tweet {
 
 // have to set up taxonomies after the insert in case we are in a context without
 // a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
-
-		foreach ($tax_input as $tax => $terms) {
-			if (count($terms)) {
-				wp_set_post_terms($this->post_id, $terms, $tax);
-			}
-		}
+		$this->set_taxonomies();
 		
-		update_post_meta($this->post_id, self::$prefix.'id', $this->id());
-		update_post_meta($this->post_id, self::$prefix.'raw_data', addslashes($this->raw_data));
+		update_post_meta($this->post_id, '_aktt_tweet_id', $this->id());
+		update_post_meta($this->post_id, '_aktt_tweet_raw_data', addslashes($this->raw_data));
 		
 		// Allow things to hook in here
-		do_action('AKTT_Tweet_add', $this);
+		do_action('AKTT_Tweet_added', $this);
 		
 		return true;
 	}
 	
+	
+	/**
+	 * Replace the raw Twitter data for a tweet
+	 *
+	 * @param stdClass $tweet_data 
+	 * @return bool
+	 */
+	function update_twitter_data($tweet_data) {
+		$this->data = $tweet_data;
+		$this->raw_data = json_encode($tweet_data);
+		$post = $this->get_post();
+		if ($post && !empty($post->ID)) {
+			if (update_post_meta($post->ID, '_aktt_tweet_raw_data', addslashes($this->raw_data))) {
+				delete_post_meta($post->ID, '_aktt_30_backfill_needed', 1);
+				$this->set_taxonomies();
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Create blog post from tweet
+	 *
+	 * @param array $args 
+	 * @return bool
+	 */
 	function create_blog_post($args = array()) {
 		extract($args);
 		
@@ -438,21 +509,30 @@ class AKTT_Tweet {
 
 		set_post_format($this->blog_post_id, 'status');
 
-		update_post_meta($this->blog_post_id, self::$prefix.'id', $this->id()); // twitter's tweet ID
-		update_post_meta($this->blog_post_id, self::$prefix.'post_id', $this->post_id); // twitter's post ID
+		update_post_meta($this->blog_post_id, '_aktt_tweet_id', $this->id()); // twitter's tweet ID
+		update_post_meta($this->blog_post_id, '_aktt_tweet_post_id', $this->post_id); // twitter's post ID
 		
 		// Add it to the tweet's post_meta as well
-		update_post_meta($this->post_id, self::$prefix.'blog_post_id', $this->blog_post_id);
-
+		update_post_meta($this->post_id, '_aktt_tweet_blog_post_id', $this->blog_post_id);
+		
 		// Let Social know to aggregate info about this post
+		$account = false;
 		foreach (AKTT::$accounts as $aktt_account) {
 			if ($aktt_account->social_acct->id() == $this->data->user->id_str) {
 				$account = $aktt_account->social_acct;
 				break;
 			}
 		}
-		$social = Social::instance();
-		$social->add_broadcasted_id($this->blog_post_id, 'twitter', $this->id(), $this->content(), $account, null);
+		if ($account) {
+			Social::instance()->add_broadcasted_id(
+				$this->blog_post_id,
+				'twitter',
+				$this->id(),
+				$this->content(),
+				$account,
+				null
+			);
+		}
 		
 		// Let the account know we were successful
 		return true;

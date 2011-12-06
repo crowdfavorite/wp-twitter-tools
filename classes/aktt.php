@@ -53,13 +53,14 @@ class AKTT {
 		
 		// Cron Hooks
 		add_action('social_cron_15', array('AKTT', 'import_tweets'));
+		add_action('aktt_backfill_tweets', array('AKTT', 'backfill_tweets'));
 		
 		/* Set our default settings.  We need to do this at init() so 
 		that any text domains (i18n) are registered prior to us setting 
 		the labels. */
 		self::set_default_settings();
 		
-		// Set logging to what's in the plugin settings
+		// Set logging to admin screen settings
 		self::$debug = self::get_option('debug');
 	}
 	
@@ -348,7 +349,7 @@ class AKTT {
 // set tweet ID
 		if (!empty($params['id'])) {
 			$query_data['meta_query'] = array(array(
-				'key' => AKTT_Tweet::$prefix.'id',
+				'key' => '_aktt_tweet_id',
 				'value' => $params['id'],
 				'compare' => '='
 			));
@@ -410,7 +411,7 @@ class AKTT {
 	 */
 	static function the_post($post) {
 		if ($post->post_type == self::$post_type && empty($post->tweet)) {
-			if ($raw_data = get_post_meta($post->ID, AKTT_Tweet::$prefix.'raw_data', true)) {
+			if ($raw_data = get_post_meta($post->ID, '_aktt_tweet_raw_data', true)) {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
 			}
 			else {
@@ -586,7 +587,9 @@ class AKTT {
 				
 				// Loop over each setting and sanitize
 				foreach (array_keys(AKTT_Account::$config) as $key) {
-					$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					if (isset($acct['settings'][$key])) {
+						$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					}
 				}
 			}
 		}
@@ -678,6 +681,20 @@ class AKTT {
 					WHERE upgrade_30 = 0
 				");
 			}
+		}
+// check to see if CRON for backfilling data is scheduled
+		if (wp_next_scheduled('aktt_backfill_tweets') === false) {
+// check to see if it should be
+			$query = new WP_Query(array(
+				'post_type' => AKTT::$post_type,
+				'posts_per_page' => 10,
+				'meta_key' => '_aktt_30_backfill_needed',
+			));
+			if (count($query->posts)) {
+// schedule
+				wp_schedule_event(time() + 900, 'hourly', 'aktt_backfill_tweets');
+			}
+			unset($query);
 		}
 ?>
 		<div class="wrap" id="<?php echo self::$prefix.'options_page'; ?>">
@@ -891,6 +908,49 @@ class AKTT {
 		}
 	}
 	
+	
+	/**
+	 * Find 10 tweets, backfill the data from Twitter
+	 *
+	 * @param int $count 
+	 * @return bool
+	 */
+	function backfill_tweets($count = 10) {
+		self::log('#### Backfilling tweets ####');
+		$query = new WP_Query(array(
+			'post_type' => AKTT::$post_type,
+			'posts_per_page' => 10,
+			'meta_key' => '_aktt_30_backfill_needed',
+		));
+		if (!count($query->posts)) {
+			if (($timestamp = wp_next_scheduled('aktt_backfill_tweets')) !== false) {
+				wp_unschedule_event($timestamp, 'aktt_backfill_tweets');
+			}
+			return false;
+		}
+		foreach ($query->posts as $post) {
+			$tweet_id = get_post_meta($post->ID, '_aktt_tweet_id', true);
+			if (empty($tweet_id)) {
+				continue;
+			}
+			$url = site_url('index.php?'.http_build_query(array(
+				'aktt_action' => 'backfill_tweet_data',
+				'tweet_id' => $tweet_id,
+				'social_api_key' => Social::option('system_cron_api_key')
+			)));
+			self::log('Backfilling tweet '.$tweet_id.' '.$url);
+			wp_remote_get(
+				$url,
+				array(
+					'timeout' => 0.01,
+					'blocking' => false,
+					'sslverify' => apply_filters('https_local_ssl_verify', true),
+				)
+			);
+		}
+		return true;
+	}
+	
 	/**
 	 * Create tweet when Social does a broadcast
 	 *
@@ -915,6 +975,15 @@ class AKTT {
 		}
 	}
 	
+	/**
+	 * Check for auth against Social's api key
+	 *
+	 * @return book
+	 */
+	static function social_key_auth() {
+		return (bool) (!empty($_GET['social_api_key']) && stripslashes($_GET['social_api_key']) == Social::option('system_cron_api_key'));
+	}
+	
 	
 	/**
 	 * Request handler for admin
@@ -925,7 +994,7 @@ class AKTT {
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
 				case 'download_account_tweets':
-					if (empty($_GET['acct_id']) || stripslashes($_GET['social_api_key']) != Social::option('system_cron_api_key')) {
+					if (empty($_GET['acct_id']) || !AKTT::social_key_auth()) {
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
 					}
 					$acct_id = intval($_GET['acct_id']);
@@ -935,6 +1004,53 @@ class AKTT {
 							self::$accounts[$acct_id]->save_tweets($tweets);
 						}
 					}
+					die();
+					break;
+				case 'backfill_tweet_data':
+					if (empty($_GET['tweet_id']) || !AKTT::social_key_auth()) {
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+					$t = new AKTT_Tweet(stripslashes($_GET['tweet_id']));
+					if (!$t->get_post()) {
+						die();
+					}
+					$account_found = $tweet_found = $tweet = false;
+					$usernames = wp_get_object_terms($t->post->ID, 'aktt_account');
+					AKTT::get_social_accounts();
+					foreach (AKTT::$accounts as $id => $account) {
+						if ($usernames[0]->slug == $account->social_acct->name()) {
+							// proper account stored as $account
+							$account_found = true;
+							break;
+						}
+					}
+					if ($account_found) {
+						$response = Social::instance()->service('twitter')->request(
+							$account->social_acct,
+							'statuses/show/'.urlencode($t->id).'.json',
+								array(
+								'include_entities' => 1, // include explicit hashtags and mentions
+								'include_rts' => 1, // include retweets
+							)
+						);
+						$content = $response->body();
+						if ($content->result == 'success') {
+							$tweets = $content->response;
+							if (!$tweets || !is_array($tweets) || count($tweets) != 1) {
+								$tweet = $tweet[0];
+							}
+						}
+					}
+					if (!$tweet) {
+						$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($t->id).'.json?include_entities=true', array());
+						if (!is_wp_error($response)) {
+							$tweet = json_decode(wp_remote_retrieve_body($response));
+						}
+					}
+					if (!is_a($tweet, 'stdClass')) {
+						wp_die('Failed to download tweet');
+					}
+					$t->update_twitter_data($tweet);
 					die();
 					break;
 			}
@@ -1102,6 +1218,11 @@ jQuery(function($) {
 
 }
 
-
+if (!empty($_GET['backfill'])) {
+	add_action('wp', function() {
+		AKTT::backfill_tweets();
+		die('backfilled');
+	});
+}
 
 
