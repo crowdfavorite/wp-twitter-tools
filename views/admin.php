@@ -2,10 +2,21 @@
 .dim {
 	opacity: .5;
 }
+.button-secondary {
+	margin-left: 10px;
+}
+.aktt-form {
+	margin-bottom: 40px;
+}
 .aktt-upgrade-needed {
-	background: #ffc;
+	background: #c5e0ef url(<?php echo esc_url(plugins_url('assets/img/bg-clouds.png', AKTT_FILE)); ?>) bottom center repeat-x;
 	margin-top: 20px;
-	padding: 20px;
+	padding: 15px 10px 5px;
+}
+.aktt-upgrade-needed h3,
+.aktt-upgrade-needed p {
+	margin: 0;
+	padding: 0 0 10px;
 }
 table.form-table {
 	margin: 20px 0;
@@ -43,59 +54,30 @@ table.form-table h3 {
 }
 .depends-on-create-posts {
 	background: #eee;
+	margin: 0 0 10px;
+	padding: 10px 10px 0;
 }
 .depends-on-create-posts.dim {
 	background: transparent;
 }
-</style>
-<script>
-function akttSetState(elem) {
-	var $account = jQuery(elem);
-	var $settings = $account.find('.settings');
-	var $enabled = $account.find('input.enabled');
-	var $createPosts = $account.find('input.create-posts');
-// toggle enabled icon
-	if (!$settings.is(':visible')) {
-		if ($enabled.is(':checked')) {
-			$account.addClass('aktt-account-enabled');
-		}
-		else {
-			$account.addClass('dim');
-		}
-	}
-// toggle enabled/dimmed for enabled dependent fields
-	if ($enabled.is(':checked')) {
-		$account.find('.depends-on-enabled').removeClass('dim');
-	}
-	else {
-		$account.find('.depends-on-enabled').addClass('dim');
-	}
-// toggle enabled/dimmed for create blog posts dependent fields
-	if ($createPosts.is(':checked')) {
-		$account.find('.depends-on-create-posts').removeClass('dim');
-	}
-	else {
-		$account.find('.depends-on-create-posts').addClass('dim');
-	}
+.depends-on-create-posts h4,
+.depends-on-create-posts p {
+	margin: 0 0 10px;
+	padding: 0;
 }
-jQuery(function($) {
-// toggle settings
-	$('.aktt-account').each(function() {
-		var $account = $(this);
-		akttSetState($account);
-		$account.find('h3').click(function() {
-			$account.removeClass('dim aktt-account-enabled').find('.settings').slideToggle(function() {
-				akttSetState($account);
-			});
-		}).end().find('input[type="checkbox"].enabled, input[type="checkbox"].create-posts').change(function() {
-			akttSetState($account);
-		});
-	});
-	$('#aktt-account-list').css({
-		visibility: 'visible'
-	});
-});
-</script>
+.depends-on-create-posts label.right {
+	display: block;
+	padding-left: 150px;
+}
+.depends-on-create-posts label.left {
+	display: block;
+	float: left;
+	width: 150px;
+}
+table.form-table .depends-on-create-posts .help {
+	color: #666;
+}
+</style>
 <div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
 	<?php screen_icon(); ?>
 	<h2><?php _e('Twitter Tools', 'twitter-tools'); ?></h2>
@@ -105,13 +87,15 @@ if (AKTT::$enabled) {
 	if ($upgrade_needed || 1) {
 ?>
 	<div class="aktt-upgrade-needed">
-		<a href="<?php echo esc_url(admin_url('index.php?aktt_action=upgrade-3.0')); ?>" class="aktt-upgrade-3.0 button-secondary"><?php _e('Upgrade Previous Twitter Tools Data', 'twitter-tools'); ?></a>
+		<h3><?php _e('Upgrade Needed!', 'twitter-tools'); ?></h3>
+		<p><?php _e('Looks like you have upgraded from a previous version of Twitter Tools.', 'twitter-tools'); ?>
+		<a href="<?php echo esc_url(admin_url('index.php?aktt_action=upgrade-3.0')); ?>" class="aktt-upgrade-3.0 button-secondary"><?php _e('Upgrade Your Tweets', 'twitter-tools'); ?></a></p>
 	</div>
 <?php
 	}
 	
 ?>
-	<form method="post" action="<?php echo esc_url(admin_url('options.php')); ?>">
+	<form class="aktt-form" method="post" action="<?php echo esc_url(admin_url('options.php')); ?>">
 		<table class="form-table">
 <?php
 	foreach (AKTT::$settings as $setting) {
@@ -184,11 +168,68 @@ if (AKTT::$enabled) {
 	</form>
 
 	<h3><?php _e('Download Tweets', 'twitter-tools'); ?></h3>
-
-	<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Download Tweets Now', 'twitter-tools'); ?></a>
+	<p>
+		<?php _e('Tweets are downloaded automatically every 15 minutes. Can\'t wait?', 'twitter-tools'); ?>
+		<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Download Tweets Now', 'twitter-tools'); ?></a>
+	</p>
 
 <?php
 }
 ?>
 </div><!-- /wrap -->
-
+<script>
+function akttSetState(elem) {
+	var $account = jQuery(elem);
+	var $settings = $account.find('.settings');
+	var $enabled = $account.find('input.enabled');
+	var $createPosts = $account.find('input.create-posts');
+// toggle enabled icon
+	if (!$settings.is(':visible')) {
+		if ($enabled.is(':checked')) {
+			$account.addClass('aktt-account-enabled');
+		}
+		else {
+			$account.addClass('dim');
+		}
+	}
+// toggle enabled/dimmed for enabled dependent fields
+	if ($enabled.is(':checked')) {
+		$account.find('.depends-on-enabled').removeClass('dim');
+	}
+	else {
+		$account.find('.depends-on-enabled').addClass('dim');
+	}
+// toggle enabled/dimmed for create blog posts dependent fields
+	if ($createPosts.is(':checked')) {
+		$account.find('.depends-on-create-posts').removeClass('dim');
+	}
+	else {
+		$account.find('.depends-on-create-posts').addClass('dim');
+	}
+}
+jQuery(function($) {
+// toggle settings
+	$('.aktt-account').each(function() {
+		var $account = $(this);
+		akttSetState($account);
+		$account.find('h3').click(function() {
+			$account.removeClass('dim aktt-account-enabled').find('.settings').slideToggle(function() {
+				akttSetState($account);
+			});
+		}).end().find('input[type="checkbox"].enabled, input[type="checkbox"].create-posts').change(function() {
+// 			if ($(this).filter('.create-posts').size()) {
+// 				if ($(this).is(':checked')) {
+// 					$account.find('.depends-on-create-posts').slideDown();
+// 				}
+// 				else {
+// 					$account.find('.depends-on-create-posts').slideUp();
+// 				}
+// 			}
+			akttSetState($account);
+		});
+	});
+	$('#aktt-account-list').css({
+		visibility: 'visible'
+	});
+});
+</script>

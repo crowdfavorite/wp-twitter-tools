@@ -79,99 +79,15 @@ class AKTT_Account {
 	}
 	
 	function __construct($acct = null) {
-
 		// Set our ID
 		$this->id = $acct->id();
 		
-		// Set the account (stdClass Obj)
+		// Set the account (Social_Service_Twitter_Account)
 		$this->social_acct = $acct;
 		
 		// For convenience, set a reference to the service which has all the account methods
 		$this->service = &Social::instance()->service('twitter');
 		
-	}
-	
-	function settings_form() {
-		$name = $this->social_acct->name();
-		$avatar = $this->social_acct->avatar();
-		$img = empty($avatar) ? '' : '<img class="avatar" src="'.esc_url($avatar).'" />';
-?>
-		<li class="aktt_acct_item">
-			<h3><?php echo esc_html($name); ?></h3>
-			<?php echo $img; ?>
-			<ul class="aktt-account-settings">
-<?php 
-		foreach (AKTT_Account::$settings as $key => $setting) {
-			$this->output_setting_item($key, $setting);
-		}
-?>
-			</ul><!-- /aktt-account-settings -->
-		</li>
-<?php
-	}
-	
-	function output_setting_item($key, $setting) {
-		// Build our complex option name
-		$name = 'aktt_v3_accounts['.$this->id.'][settings]['.$key.']';
-		
-		// Get our label's HTML
-		$label_html = '<label for="'.esc_attr($name).'" class="aktt-account-setting">'.$setting['label'].'</label>';
-		
-		// Get our field's HTML
-		ob_start();
-		switch ($key) {
-			case 'enabled':
-			case 'create_posts':
-			case 'exclude_reply_tweets':
-				?>
-				<input type="checkbox" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="1"<?php checked('1', $this->option($key)); ?> />
-				<?php
-				break;
-			case 'post_author':
-				wp_dropdown_users(array(
-					'name' => $name,
-					'id' => $name,
-					'selected' => $this->option($key),
-					'who' => 'authors',
-				));
-				break;
-			case 'post_category':
-				wp_dropdown_categories(array(
-					'name' => $name,
-					'id' => $name,
-					'selected' => $this->option($key),
-					'hide_empty' => 0,
-					'taxonomy' => 'category',
-				));
-				break;
-			case 'post_tags':
-				// The DB value is a comma separated list
-				?>
-				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($this->option($key)); ?>" />  <?php _e('(comma separated)', 'twitter-tools'); ?>
-				<?php
-				break;
-			case 'hashtag':
-			default:
-				?>
-				<input type="text" name="<?php echo esc_attr($name); ?>" id="<?php echo esc_attr($name); ?>" value="<?php echo esc_attr($this->option($key)); ?>" />
-				<?php 
-				break;
-		}
-		// Get our field's HTML
-		$field_html = ob_get_clean();
-		
-		?>
-		<li>
-			<?php
-			if ($setting['label_first']) {
-				echo $label_html.$field_html;
-			}
-			else {
-				echo $field_html.$label_html;
-			}
-			?>
-		</li>
-		<?php
 	}
 	
 	
