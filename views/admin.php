@@ -58,12 +58,13 @@ if (AKTT::$enabled) {
 ?>
 		</table>
 	
-<?php 
+<?php
+	
+	AKTT::output_account_settings_section();
+
 	// Output the nonces, and hidden fields for the page
 	settings_fields(AKTT::$menu_page_slug);
 	
-	// Output the visible settings fields
-	do_settings_sections(AKTT::$menu_page_slug);
 ?>
 		
 		<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'twitter-tools'); ?>" />

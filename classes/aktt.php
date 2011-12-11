@@ -464,27 +464,11 @@ class AKTT {
 			array('AKTT', 'sanitize_plugin_settings') // Sanitize callback
 		);
 		
-		// Add a section of settings to Twitter Tools' settings page
-		add_settings_section(
-			self::$plugin_settings_section_slug, // group id
-			null, // title
-			array('AKTT', 'output_settings_section_text'), // callback for text
-			self::$menu_page_slug // Page Handle
-		);
-		
 		// Register our account settings
 		register_setting(
 			self::$menu_page_slug, // Page it belongs to
 			'aktt_v3_accounts', // option name
 			array('AKTT', 'sanitize_account_settings') // Sanitize callback
-		);
-		
-		// Add a section for Account setting
-		add_settings_section(
-			self::$account_settings_section_slug, // group id
-			__('Accounts', 'twitter-tools'), // title
-			array('AKTT', 'output_account_settings_section'), // callback for text
-			self::$menu_page_slug // Page Handle
 		);
 		
 	}
@@ -650,14 +634,6 @@ class AKTT {
 	
 	
 	/**
-	 * Introductory text to the settings section.
-	 *
-	 * @return void
-	 */
-	static function output_settings_section_text() {}
-	
-	
-	/**
 	 * Outputs the HTML for the ACCOUNT portion of the settings page.
 	 *
 	 * @return void
@@ -680,7 +656,7 @@ class AKTT {
 			<ul id="<?php echo self::$prefix.'account_list'; ?>">
 <?php 
 			foreach (self::$accounts as $acct) {
-				$acct->output_account_config();
+				$acct->settings_form();
 			}
 ?>
 			</ul><!-- /<?php echo self::$prefix.'account_list'; ?> -->

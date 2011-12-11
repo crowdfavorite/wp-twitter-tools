@@ -91,7 +91,7 @@ class AKTT_Account {
 		
 	}
 	
-	function output_account_config() {
+	function settings_form() {
 		$name = $this->social_acct->name();
 		$avatar = $this->social_acct->avatar();
 		$img = empty($avatar) ? '' : '<img class="avatar" src="'.esc_url($avatar).'" />';
