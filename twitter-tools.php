@@ -22,6 +22,17 @@ Author URI: http://crowdfavorite.com
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
 // **********************************************************************
 
+$aktt_file = __FILE__;
+if (isset($plugin)) {
+	$aktt_file = $plugin;
+}
+else if (isset($mu_plugin)) {
+	$aktt_file = $mu_plugin;
+}
+else if (isset($network_plugin)) {
+	$aktt_file = $network_plugin;
+}
+@define('AKTT_FILE', $aktt_file);
 @define('AKTT_PATH', plugin_dir_path(__FILE__));
 
 require_once(AKTT_PATH.'/classes/aktt.php');
@@ -59,7 +70,7 @@ function aktt_shortcode_tweets($args) {
 	), $args);
 	$tweets = AKTT::get_tweets($args);
 	ob_start();
-	include('views/tweet-list.php');
+	include(AKTT_PATH.'/views/tweet-list.php');
 	return ob_get_clean();
 }
 
@@ -89,7 +100,7 @@ function aktt_shortcode_tweet($args) {
 	}
 	$tweet = $tweets[0];
 	ob_start();
-	include('views/tweet.php');
+	include(AKTT_PATH.'/views/tweet.php');
 	return ob_get_clean();
 }
 
