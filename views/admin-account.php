@@ -19,6 +19,33 @@ $name = 'aktt_v3_accounts['.$account->id.'][settings][%s]';
 			</label>
 		</p>
 		<fieldset class="depends-on-create-posts">
+			<h4><?php _e('Settings for blog posts', 'twitter-tools'); ?></h4>
+			<p>
+				<label for="<?php echo esc_attr(sprintf($name, 'post_author')); ?>"><?php _e('Author', 'twitter-tools'); ?></label>
+<?php
+wp_dropdown_users(array(
+	'name' => sprintf($name, 'post_author'),
+	'id' => sprintf($name, 'post_author'),
+	'selected' => $account->option('post_author'),
+	'who' => 'authors',
+));
+?>
+			</p>
+			<p>
+				<label for="<?php echo esc_attr(sprintf($name, 'post_category')); ?>"><?php _e('Category', 'twitter-tools'); ?></label>
+<?php
+wp_dropdown_categories(array(
+	'name' => sprintf($name, 'post_category'),
+	'id' => sprintf($name, 'post_category'),
+	'selected' => $account->option('post_category'),
+	'hide_empty' => 0,
+	'taxonomy' => 'category',
+));
+?>
+			</p>
+			<p>
+				<label for="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>"><?php _e('Tags', 'twitter-tools'); ?></label>
+				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" value="<?php echo esc_attr($account->option('post_tags')); ?>" />  <span class="help"><?php _e('(comma separated)', 'twitter-tools'); ?></span>
 			<p>
 				<label for="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>">
 					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" id="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" value="1" <?php checked('1', $account->option('exclude_reply_tweets')); ?> />

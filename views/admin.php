@@ -41,6 +41,12 @@ table.form-table h3 {
 	display: none;
 	padding-left: 58px;
 }
+.depends-on-create-posts {
+	background: #eee;
+}
+.depends-on-create-posts.dim {
+	background: transparent;
+}
 </style>
 <script>
 function akttSetState(elem) {
