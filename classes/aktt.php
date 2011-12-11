@@ -77,7 +77,7 @@ class AKTT {
 			'0' => __('No', 'twitter-tools')
 		);
 		self::$settings = array(
-			'tweet_admin_ui' => array(
+			'enable_admin_ui' => array(
 				'name' => 'enable_admin_ui',
 				'value' => 1,
 				'label' => __('Show admin screens for tweets', 'twitter-tools'),
@@ -538,7 +538,7 @@ class AKTT {
 	}
 	
 	static function sanitize_account_setting($key, $value) {
-		return self::sanitize_setting($key, $value, self::$settings[$key]['type']);
+		return self::sanitize_setting($key, $value, AKTT_Account::$settings[$key]['type']);
 	}
 	
 	

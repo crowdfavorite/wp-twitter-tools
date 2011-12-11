@@ -424,7 +424,7 @@ class AKTT_Tweet {
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
-			'post_slug' => $this->id(),
+			'post_name' => $this->id(),
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
