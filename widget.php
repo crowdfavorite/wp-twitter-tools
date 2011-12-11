@@ -16,7 +16,7 @@ class AKTT_Widget extends WP_Widget {
 	function form($instance) {
 		$account_options = array();
 		foreach (AKTT::$accounts as $account) {
-			if ($account->get_option('enabled')) {
+			if ($account->option('enabled')) {
 				$account_options[] = $account->social_acct->name();
 			}
 		}

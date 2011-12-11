@@ -1,19 +1,19 @@
 <?php
 
 class AKTT {
+	// settings: aktt_v3_settings
 	static $ver = '3.0dev';
 	static $enabled = false;
 	static $prefix = 'aktt_';
 	static $post_type = 'aktt_tweet';
 	static $text_domain = 'twitter-tools';
 	static $menu_page_slug = 'twitter-tools';
-	static $plugin_options_key = 'aktt_v3_settings';
 	static $plugin_settings_section_slug = 'aktt_plugin_settings_group';
 	static $account_settings_section_slug = 'aktt_account_settings';
 	static $cap_options = 'manage_options';
 	static $cap_download = 'publish_posts';
 	static $admin_notices = array();
-	static $default_settings = array();
+	static $settings = array();
 	static $accounts = array();
 	static $debug = false;
 	
@@ -61,7 +61,7 @@ class AKTT {
 		self::set_default_settings();
 		
 		// Set logging to admin screen settings
-		self::$debug = self::get_option('debug');
+		self::$debug = self::option('debug');
 	}
 	
 	
@@ -76,7 +76,7 @@ class AKTT {
 			'1' => __('Yes', 'twitter-tools'),
 			'0' => __('No', 'twitter-tools')
 		);
-		self::$default_settings = array(
+		self::$settings = array(
 			'tweet_admin_ui' => array(
 				'name' => 'enable_admin_ui',
 				'value' => 1,
@@ -88,9 +88,11 @@ class AKTT {
 				'name' => 'tweet_visibility',
 				'value' => 1,
 				'label' => __('Create URLs for tweets', 'twitter-tools'),
-				'help' => '<span class="cfct-help">'.site_url('tweet/12345678').'</span>',
 				'type' => 'radio',
-				'options' => $yn_options,
+				'options' => array(
+					'1' => sprintf(__('Yes <span class="help">(%s)</span>', 'twitter-tools'), site_url('tweet/{tweet-id}')),
+					'0' => __('No', 'twitter-tools')
+				),
 			),
 			'credit' => array(
 				'name' => 'credit',
@@ -102,10 +104,12 @@ class AKTT {
 			'debug' => array(
 				'name' => 'debug',
 				'value' => 0,
-				'label' => __('Enable debug logging', 'twitter-tools'),
-				'help' => '<span class="cfct-help">'.__('written to the PHP error log').'</span>',
+				'label' => __('Debug logging', 'twitter-tools'),
 				'type' => 'radio',
-				'options' => $yn_options,
+				'options' => array(
+					'0' => __('Disabled', 'twitter-tools'),
+					'1' => __('Enabled <span class="help">(written to the PHP error log)</span>', 'twitter-tools'),
+				),
 			),
 		);
 	}
@@ -159,8 +163,8 @@ class AKTT {
 			'supports' => array(
 				'editor',
 			),
-			'public' => (bool) self::get_option('tweet_visibility'),
-			'show_ui' => (bool) self::get_option('tweet_admin_ui'),
+			'public' => (bool) self::option('tweet_visibility'),
+			'show_ui' => (bool) self::option('enable_admin_ui'),
 			'rewrite' => array(
 				'slug' => 'tweets',
 				'with_front' => false
@@ -177,8 +181,8 @@ class AKTT {
 	 */
 	static function register_taxonomies() {
 		$defaults = array(
-			'public' => (bool) self::get_option('tweet_visibility'),
-			'show_ui' => (bool) self::get_option('tweet_admin_ui'),
+			'public' => (bool) self::option('tweet_visibility'),
+			'show_ui' => (bool) self::option('tweet_admin_ui'),
 		);
 		$taxonomies = array(
 			'aktt_account' => array_merge($defaults, array(
@@ -213,62 +217,25 @@ class AKTT {
 	
 	
 	/**
-	 * Get default setting's value
+	 * Get or update an option from the DB, and fall back to the default setting
 	 *
 	 * @param string $setting 
 	 * @return mixed
 	 */
-	static function get_default_setting($setting) {
-		return isset(self::$default_settings[$setting]) ? self::$default_settings[$setting]['value'] : null;
-	}
-	
-	
-	/**
-	 * Get an option from the DB, and fall back to the default setting
-	 *
-	 * @param string $setting 
-	 * @return mixed
-	 */
-	static function get_option($key) {
+	static function option($key, $value = null) {
 		// Do we have an option?
-		$option = get_option(self::$plugin_options_key);
+		$option = get_option('aktt_v3_settings');
+		if (!is_null($value)) {
+			$option[$key] = $value;
+			return update_option('aktt_v3_settings', $option);
+		}
 		if (!empty($option) && is_array($option) && isset($option[$key])) {
 			$val = $option[$key];
 		}
 		else { // Get a default
-			$val = self::get_default_setting($key);
+			$val = isset(self::$settings[$key]) ? self::$settings[$key]['value'] : null;
 		}
-		return apply_filters(self::$prefix.'get_option', $val, $key);
-	}
-	
-	
-	/**
-	 * Updates a setting, if === null is passed as the value, it 
-	 * picks up the default setting
-	 *
-	 * @param string $setting 
-	 * @param mixed $value 
-	 * @return void
-	 */
-	static function save_setting($key, $value = null) {
-		// If it's null, get the default value
-		$val = is_null($value) ? self::get_default_setting($key) : $value;
-		return update_option(self::$prefix.$key, $val);
-	}
-
-
-	/**
-	 * Updates a setting, with a user capability check
-	 *
-	 * @param string $setting 
-	 * @param mixed $value 
-	 * @uses current_user_can()
-	 * @return void
-	 */
-	static function form_save_setting($key, $value = null) {
-		if (current_user_can(self::$cap_options)) {
-			return self::save_setting($key, $value);
-		}
+		return apply_filters('aktt_get_option', $val, $key);
 	}
 	
 	
@@ -493,7 +460,7 @@ class AKTT {
 		// Register our parent setting (it contains an array of all our plugin-wide settings)
 		register_setting(
 			self::$menu_page_slug, // Page it belongs to
-			self::$plugin_options_key, // option name
+			'aktt_v3_settings', // option name
 			array('AKTT', 'sanitize_plugin_settings') // Sanitize callback
 		);
 		
@@ -508,7 +475,7 @@ class AKTT {
 		// Register our account settings
 		register_setting(
 			self::$menu_page_slug, // Page it belongs to
-			AKTT_Account::$settings_option_name, // option name
+			'aktt_v3_accounts', // option name
 			array('AKTT', 'sanitize_account_settings') // Sanitize callback
 		);
 		
@@ -519,19 +486,6 @@ class AKTT {
 			array('AKTT', 'output_account_settings_section'), // callback for text
 			self::$menu_page_slug // Page Handle
 		);
-		
-		// Register our settings' fields with WP
-		foreach (self::$default_settings as $key => $field) {
-			// Add the settings to the proper group
-			add_settings_field(
-				$key, // unique ID for the field...not necessarily the option_name
-				$field['label'],
-				array('AKTT', 'output_settings_field'), // Callback to output the actual HTML field
-				self::$menu_page_slug, // Page Handle
-				self::$plugin_settings_section_slug, // Settings Group
-				$field
-			);
-		}
 		
 	}
 	
@@ -581,7 +535,7 @@ class AKTT {
 				}
 				
 				// Loop over each setting and sanitize
-				foreach (array_keys(AKTT_Account::$config) as $key) {
+				foreach (array_keys(AKTT_Account::$settings) as $key) {
 					if (isset($acct['settings'][$key])) {
 						$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
 					}
@@ -596,11 +550,11 @@ class AKTT {
 	
 	
 	static function sanitize_plugin_setting($key, $value) {
-		return self::sanitize_setting($key, $value, self::$default_settings[$key]['type']);
+		return self::sanitize_setting($key, $value, self::$settings[$key]['type']);
 	}
 	
 	static function sanitize_account_setting($key, $value) {
-		return self::sanitize_setting($key, $value, AKTT_Account::$config[$key]['type']);
+		return self::sanitize_setting($key, $value, self::$settings[$key]['type']);
 	}
 	
 	
@@ -700,90 +654,7 @@ class AKTT {
 	 *
 	 * @return void
 	 */
-	static function output_settings_section_text() {
-	}
-	
-	
-	/**
-	 * Outputs a checkbox settings field
-	 *
-	 * @param array $args 
-	 * @return void
-	 */
-	static function output_settings_field($args) {
-	
-		$type = $args['type'];
-		$value = $args['value'];
-		$name = $args['name'];
-		$id = empty($args['id']) ? $args['name'] : $args['id'];
-		$class = empty($args['class']) ? '' : ' class="'.esc_attr($args['class']).'"';
-		$html = '';
-		
-		switch ($type) {
-			case 'text':
-				$html .= '<input id="'.esc_attr($id).'" name="'.esc_attr($name).'" type="text" value="'.esc_attr($value).'"'.$class.' />';
-				break;
-			case 'password':
-				$html .= '<input id="'.esc_attr($id).'" name="'.esc_attr($name).'" type="password" value="'.esc_attr($value).'"'.$class.' />';
-				break;
-			case 'textarea':
-				empty($args['cols']) ? $cols = 60 : $cols = (int) $args['cols'];
-				empty($args['rows']) ? $rows = 5 : $rows = (int) $args['rows'];
-				$html .= '<textarea id="'.esc_attr($id).'" name="'.esc_attr($name).'" cols="'.$cols.'" rows="'.$rows.'"'.$class.'>'.esc_textarea($value).'</textarea>';
-				break;
-			case 'select':
-				$html .= '<select id="'.esc_attr($id).'" name="'.esc_attr($name).'"'.$class.'>';
-				$options = $args['options'];
-				foreach ($options as $opt_value => $opt_label) {
-					$html .= '<option value="'.esc_attr($opt_value).'"'.selected($opt_value, $value, false).'>'.esc_html($opt_label).'</option>';
-				}
-				$html .= '</select>';
-				break;
-			case 'radio':
-				$options = $args['options'];
-				if (is_array($options)) {
-					$html .= '<ul>';
-					foreach ($options as $opt_value => $opt_label) {
-						$html .= '
-						<li>
-							<label for="'.esc_attr($name.'-'.$opt_value).'">
-								<input type="radio" name="'.esc_attr($name).'" value="'.esc_attr($opt_value).'" id="'.esc_attr($name.'-'.$opt_value).'"'.checked($opt_value, $value, false).' />
-								'.esc_html($opt_label).'
-							</label>
-						</li>';
-					}
-					$html .= '</ul>';
-				}
-				break;
-			case 'checkbox':
-				$options = $args['options'];
-				if (is_array($options)) {
-					$html .= '<ul>';
-					foreach ($options as $opt_value => $opt_label) {
-						$html .= '
-						<li>
-							<label for="'.esc_attr($name.'-'.$opt_value).'">
-								<input type="checkbox" name="'.esc_attr($name.'['.$opt_value.']').'" value="'.esc_attr($opt_value).'" id="'.esc_attr($name.'-'.$opt_value).'"'.checked($opt_value, $value[$opt['id']], false).' />
-								'.esc_html($opt_label).'
-							</label>
-						</li>';
-					}
-					$html .= '</ul>';
-				}
-				break;
-			case 'hidden':
-				$html .= '<input id="'.esc_attr($id).'" type="hidden" name="'.esc_attr($name).'" value="'.esc_attr($value).'" class="'.esc_attr($class).'" />';
-				break;
-			default:
-				$html .= apply_filters('cfct_option_'.$type, $html, $args);
-				break;
-		}
-		if (!empty($args['help'])) {
-			$html .= $args['help'];
-		}
-		
-		echo $html;
-	}
+	static function output_settings_section_text() {}
 	
 	
 	/**
@@ -880,7 +751,7 @@ class AKTT {
 		self::get_social_accounts();
 		if (count(self::$accounts)) {
 			foreach (self::$accounts as $account) {
-				if ($account->get_option('enabled')) {
+				if ($account->option('enabled')) {
 					return $account;
 				}
 			}
@@ -895,10 +766,10 @@ class AKTT {
 	 */
 	static function social_account_disconnected($service, $id) {
 		if ($service == 'twitter') {
-			$accounts = get_option(AKTT_Account::$settings_option_name);
+			$accounts = get_option('aktt_v3_accounts');
 			if (is_array($accounts) && count($accounts) && isset($accounts[$id])) {
 				unset($accounts[$id]);
-				update_option(AKTT_Account::$settings_option_name, $accounts);
+				update_option('aktt_v3_accounts', $accounts);
 			}
 		}
 	}
@@ -920,7 +791,7 @@ class AKTT {
 		// iterate over each account and download the tweets
 		foreach (self::$accounts as $id => $acct) {
 			// Download the tweets for that acct
-			if ($acct->get_option('enabled')) {
+			if ($acct->option('enabled')) {
 				// could time out with lots of accounts, so a new request for each
 				$url = site_url('index.php?'.http_build_query(array(
 					'aktt_action' => 'download_account_tweets',
@@ -998,7 +869,7 @@ class AKTT {
 // check if it's one of our enabled accounts
 		self::get_social_accounts();
 		foreach (self::$accounts as $account) {
-			if ($account->get_option('enabled') && $account->social_acct->id() == $tweet->user->id) {
+			if ($account->option('enabled') && $account->social_acct->id() == $tweet->user->id) {
 // populate AKTT_Tweet object, save
 				$t = new AKTT_Tweet($tweet);
 				$t->add();
