@@ -629,43 +629,8 @@ class AKTT {
 			}
 			unset($query);
 		}
-		include(AKTT_PATH.'/views/admin.php');
-	}
-	
-	
-	/**
-	 * Outputs the HTML for the ACCOUNT portion of the settings page.
-	 *
-	 * @return void
-	 */
-	static function output_account_settings_section() {
-		// Get all the available accounts from Social
 		self::get_social_accounts();
-?>
-		<div id="<?php echo self::$prefix; ?>accounts">
-<?php
-		if (empty(self::$accounts)) {
-?>
-			<p class="aktt-none">
-				<?php _e('No Accounts.', 'twitter-tools'); ?>
-			</p>
-<?php
-		}
-		else {
-?>
-			<ul id="<?php echo self::$prefix.'account_list'; ?>">
-<?php 
-			foreach (self::$accounts as $acct) {
-				$acct->settings_form();
-			}
-?>
-			</ul><!-- /<?php echo self::$prefix.'account_list'; ?> -->
-<?php
-		}
-?>
-			<p><?php printf(__('Manage Twitter accounts on your <a href="%s">Social settings page</a>.', 'twitter-tools'), admin_url('options-general.php?page=social.php')); ?></p>
-		</div><!-- <?php echo self::$prefix.'accounts'; ?> -->
-<?php
+		include(AKTT_PATH.'/views/admin.php');
 	}
 	
 	
