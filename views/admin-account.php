@@ -19,6 +19,12 @@ $name = 'aktt_v3_accounts['.$account->id.'][settings][%s]';
 			</label>
 		</p>
 		<fieldset class="depends-on-create-posts">
+			<p>
+				<label for="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>">
+					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" id="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" value="1" <?php checked('1', $account->option('exclude_reply_tweets')); ?> />
+					<?php _e('Don\'t create posts for reply tweets', 'twitter-tools'); ?>
+				</label>
+			</p>
 		</fieldset>
 	</div>
 </div>
