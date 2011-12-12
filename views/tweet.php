@@ -17,4 +17,3 @@ if (isset($tweet->tweet)) {
  <a href="<?php echo esc_url($tweet->tweet->status_url()); ?>" class="aktt_tweet_time"><?php echo sprintf(__('%s ago', 'twitter-tools'), human_time_diff(strtotime($tweet->post_date_gmt))); ?></a>
 <?php
 }
-?>

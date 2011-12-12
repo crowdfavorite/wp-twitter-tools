@@ -421,7 +421,7 @@ class AKTT {
 			__('Twitter Tools', 'twitter-tools'),
 			self::$cap_options,
 			self::$menu_page_slug,
-			array('AKTT', 'output_settings_page')
+			array('AKTT', 'settings_page')
 		);
 	}
 	
@@ -587,7 +587,7 @@ class AKTT {
 	 *
 	 * @return void
 	 */
-	static function output_settings_page() {
+	static function settings_page() {
 		global $wpdb;
 		$wpdb->aktt = $wpdb->prefix.'ak_twitter';
 		$upgrade_needed = in_array($wpdb->aktt, $wpdb->get_col("

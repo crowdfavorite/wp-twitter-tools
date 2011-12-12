@@ -1,28 +1,6 @@
 <?php
 
-// TODO
-/*
-
-- look for old table with tweets in it, if found show upgrade button
-
-UPGRADE
-
-- convert old tweets to new tweets
-
-- show admin page
-	- show warning
-	- start button
-	- choose Twitter account to use
-- batch process/AJAX
-
-
-CREATE BLOG POSTS
-
-- create blog posts for new tweets that do not contain the base site URL
-	- if contains t.co URL, need to convert 
-	- need to convert t.co URLs before checking
-
-*/
+// Upgrade data from Twitter Tools 2.x to 3.0
 
 global $wpdb;
 $wpdb->aktt = $wpdb->prefix.'ak_twitter';
@@ -154,8 +132,8 @@ jQuery(function($) {
 // update status bar
 					var $bar = $('.progress .bar');
 					var total = parseInt($bar.data('total'));
-					var remaining = total - parseInt(response.to_upgrade);
-					$bar.animate({ width: Math.ceil((remaining / total) * 400) + 'px' });
+					var remaining = parseInt(response.to_upgrade);
+					$bar.animate({ width: Math.ceil(((total - remaining) / total) * 400) + 'px' });
 					if (remaining > 0) {
 // request again
 						$button.click();
