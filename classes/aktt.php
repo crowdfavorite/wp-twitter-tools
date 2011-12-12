@@ -39,7 +39,6 @@ class AKTT {
 		add_action('wp', array('AKTT', 'controller'), 1);
 		add_filter('the_post', array('AKTT', 'the_post'));
 		add_filter('the_posts', array('AKTT', 'the_posts'));
-		add_filter('post_type_link', array('AKTT', 'get_tweet_permalink'), 10, 2);
 		add_action('social_account_disconnected', array('AKTT', 'social_account_disconnected'), 10, 2);
 		add_action('social_broadcast_response', array('AKTT', 'social_broadcast_response'), 10, 3);
 		
@@ -169,8 +168,8 @@ class AKTT {
 				'slug' => 'tweets',
 				'with_front' => false
 			),
+			'has_archive' => true,
 		));
-		add_permastruct(self::$post_type, '/tweets/%post_id%', false, EP_PERMALINK);
 	}
 	
 	
@@ -185,10 +184,13 @@ class AKTT {
 			'show_ui' => (bool) self::option('tweet_admin_ui'),
 		);
 		$taxonomies = array(
-			'aktt_account' => array_merge($defaults, array(
+			'aktt_accounts' => array_merge($defaults, array(
 				'labels' => array(
-					'name' => __('Account', 'twitter-tools'),
+					'name' => __('Accounts', 'twitter-tools'),
 					'singular_name' => __('Account', 'twitter-tools')
+				),
+				'rewrite' => array(
+					'slug' => 'tweet-accounts'
 				),
 			)),
 			'aktt_mentions' => array_merge($defaults, array(
@@ -196,11 +198,17 @@ class AKTT {
 					'name' => __('Mentions', 'twitter-tools'),
 					'singular_name' => __('Mention', 'twitter-tools')
 				),
+				'rewrite' => array(
+					'slug' => 'tweet-mentions'
+				),
 			)),
 			'aktt_hashtags' => array_merge($defaults, array(
 				'labels' => array(
 					'name' => __('Hashtags', 'twitter-tools'),
 					'singular_name' => __('Hashtag', 'twitter-tools')
+				),
+				'rewrite' => array(
+					'slug' => 'tweet-hashtags'
 				),
 			)),
 			'aktt_types' => array_merge($defaults, array(
@@ -208,6 +216,11 @@ class AKTT {
 					'name' => __('Types', 'twitter-tools'),
 					'singular_name' => __('Type', 'twitter-tools')
 				),
+				'rewrite' => array(
+					'slug' => 'tweet-types'
+				),
+				'public' => false,
+				'show_ui' => false,
 			)),
 		);
 		foreach ($taxonomies as $tax => $args) {
@@ -236,27 +249,6 @@ class AKTT {
 			$val = isset(self::$settings[$key]) ? self::$settings[$key]['value'] : null;
 		}
 		return apply_filters('aktt_get_option', $val, $key);
-	}
-	
-	
-	/**
-	 * Change the permalink for the tweets
-	 *
-	 * @param string $post_link 
-	 * @param object $post 
-	 * @return string
-	 */
-	static function get_tweet_permalink($post_link, $post) {
-		if ($post->post_type == self::$post_type) {
-			$rewritecode = array(
-				'%post_id%',
-			);
-			$rewritereplace = array(
-				$post->ID,
-			);
-			$post_link = str_replace($rewritecode, $rewritereplace, $post_link);
-		}
-		return $post_link;
 	}
 	
 	
@@ -479,6 +471,7 @@ class AKTT {
 	 */
 	static function sanitize_plugin_settings($value) {
 		self::maybe_create_db_index('guid');
+		flush_rewrite_rules(false);
 		if (is_array($value)) {
 			foreach ($value as $k => $v) {
 				$value[$k] = self::sanitize_plugin_setting($k, $v);

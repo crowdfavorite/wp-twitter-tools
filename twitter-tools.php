@@ -110,24 +110,4 @@ function aktt_sidebar_tweets($count = 5, $form = null) {
 	echo do_shortcode('[aktt_tweets count="'.intval($count).'"]');
 }
 
-/**
- * You must flush the rewrite rules to activate this action.
- */
-// function aktt_add_tweet_rewrites() {
-// 	global $wp_rewrite;
-// 
-// 	$rules = $wp_rewrite->generate_rewrite_rules('/tweets/%post_id%', EP_PERMALINK);
-// 	
-// 	foreach ($rules as &$rule) {
-// 		$rule = str_replace('index.php?', 'index.php?post_type=aktt_tweet&', $rule);
-// 	}
-// 
-// 	// All, paginated
-// 	$rules['tweets/page/([0-9]+)/?$'] = 'index.php?post_type=aktt_tweet&paged=$matches[1]';
-// 	// all
-// 	$rules['tweets/?$'] = 'index.php?post_type=aktt_tweet';
-// 
-// 	$wp_rewrite->rules = $rules + $wp_rewrite->rules;
-// }
-// add_action('generate_rewrite_rules', 'aktt_add_tweet_rewrites');
 

@@ -299,11 +299,11 @@ class AKTT_Tweet {
 		return $was_broadcast;
 	}
 	
-	function link_entities() {
+	function link_entities($defer_to_anywhere = true) {
 		$entities = array();
 // mentions
 		$anywhere = Social::option('twitter_anywhere_api_key');
-		if (empty($anywhere) || is_feed()) {
+		if (!$defer_to_anywhere || empty($anywhere) || is_feed()) {
 			foreach ($this->mentions() as $entity) {
 				$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
 					'find' => $entity->screen_name,
@@ -487,7 +487,7 @@ class AKTT_Tweet {
 		// Build the post data
 		$data = array(
 			'post_title' => $title_prefix.$this->title(),
-			'post_content' => $this->content(),
+			'post_content' => $this->link_entities(false),
 			'post_author' => $post_author,
 			'tax_input' => array(
 				'category' => array($post_category),
