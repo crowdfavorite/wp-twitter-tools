@@ -396,7 +396,7 @@ class AKTT {
 	 * @return array
 	 */
 	function plugin_action_links($links, $file) {
-		if (basename($file) == basename(__FILE__)) {
+		if (basename($file) == basename(AKTT_FILE)) {
 			$settings_link = '<a href="options-general.php?page='.self::$menu_page_slug.'">'.__('Settings', 'twitter-tools').'</a>';
 			array_unshift($links, $settings_link);
 		}
