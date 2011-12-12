@@ -144,7 +144,7 @@ if (AKTT::$enabled) {
 					<td>
 						<ul id="aktt-account-list">
 <?php
-		if (empty(self::$accounts) || 1==1) {
+		if (empty(self::$accounts)) {
 ?>
 							<li class="aktt-none">
 								<div class="aktt-account">
