@@ -84,7 +84,7 @@ table.form-table .depends-on-create-posts .help {
 
 <?php
 if (AKTT::$enabled) {
-	if ($upgrade_needed || 1) {
+	if ($upgrade_needed) {
 ?>
 	<div class="aktt-upgrade-needed">
 		<h3><?php _e('Upgrade Needed!', 'twitter-tools'); ?></h3>

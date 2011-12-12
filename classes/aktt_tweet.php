@@ -332,7 +332,6 @@ class AKTT_Tweet {
 			);
 		}
 		ksort($entities);
-
 		$str = $this->content();
 		$diff = 0;
 		foreach ($entities as $entity) {

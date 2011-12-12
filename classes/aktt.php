@@ -25,7 +25,7 @@ class AKTT {
 	static function init() {
 		self::$enabled = class_exists('Social');
 		if (!self::$enabled) {
-			self::add_admin_notice('error', sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'));
+			self::add_admin_notice(sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'), 'error');
 			return;
 		}
 		
@@ -77,8 +77,8 @@ class AKTT {
 			'0' => __('No', 'twitter-tools')
 		);
 		self::$settings = array(
-			'enable_admin_ui' => array(
-				'name' => 'enable_admin_ui',
+			'tweet_admin_ui' => array(
+				'name' => 'tweet_admin_ui',
 				'value' => 1,
 				'label' => __('Show admin screens for tweets', 'twitter-tools'),
 				'type' => 'radio',
@@ -118,11 +118,11 @@ class AKTT {
 	/**
 	 * Append a message of a certain type to the admin notices.
 	 *
-	 * @param string $type 
 	 * @param string $msg 
+	 * @param string $type 
 	 * @return void
 	 */
-	static function add_admin_notice($type, $msg) {
+	static function add_admin_notice($msg, $type = 'updated') {
 		self::$admin_notices[] = array(
 			'type' => $type == 'error' ? $type : 'updated', // If it's not an error, set it to updated
 			'msg' => $msg
@@ -164,7 +164,7 @@ class AKTT {
 				'editor',
 			),
 			'public' => (bool) self::option('tweet_visibility'),
-			'show_ui' => (bool) self::option('enable_admin_ui'),
+			'show_ui' => (bool) self::option('tweet_admin_ui'),
 			'rewrite' => array(
 				'slug' => 'tweets',
 				'with_front' => false
@@ -378,9 +378,6 @@ class AKTT {
 		if ($post->post_type == self::$post_type && empty($post->tweet)) {
 			if ($raw_data = get_post_meta($post->ID, '_aktt_tweet_raw_data', true)) {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
-			}
-			else {
-				$post->tweet = new AKTT_Tweet(false);
 			}
 		}
 		return $post;
@@ -919,7 +916,7 @@ class AKTT {
 					self::import_tweets();
 					wp_redirect(add_query_arg(array(
 						'page' => self::$menu_page_slug,
-						'tweets_updated' => '1'),
+						'aktt_action' => 'tweets_updated'),
 						admin_url('options-general.php')
 					));
 					break;
@@ -950,6 +947,9 @@ class AKTT {
 						'to_upgrade' => $to_upgrade
 					));
 					die();
+					break;
+				case 'tweets_updated':
+					self::add_admin_notice(__('Tweets are downloading...', 'twitter-tools'));
 					break;
 			}
 		}
