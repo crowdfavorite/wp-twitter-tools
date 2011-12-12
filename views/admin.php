@@ -48,6 +48,9 @@ table.form-table h3 {
 	margin: 0;
 	padding: 0 0 0 58px;
 }
+.aktt-none .aktt-account h3 {
+	cursor: default;
+}
 .aktt-account .settings {
 	display: none;
 	padding-left: 58px;
@@ -141,10 +144,12 @@ if (AKTT::$enabled) {
 					<td>
 						<ul id="aktt-account-list">
 <?php
-		if (empty(self::$accounts)) {
+		if (empty(self::$accounts) || 1==1) {
 ?>
 							<li class="aktt-none">
-								<?php _e('No Accounts.', 'twitter-tools'); ?>
+								<div class="aktt-account">
+									<h3 style="background: url(http://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?d=mm&f=y&s=48) left top no-repeat;"><?php _e('(no accounts)', 'twitter-tools'); ?></h3>
+								</div>
 							</li>
 <?php
 		}
