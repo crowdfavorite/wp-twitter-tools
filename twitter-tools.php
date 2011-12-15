@@ -33,7 +33,7 @@ else if (isset($network_plugin)) {
 	$aktt_file = $network_plugin;
 }
 @define('AKTT_FILE', $aktt_file);
-@define('AKTT_PATH', plugin_dir_path(__FILE__));
+@define('AKTT_PATH', WP_PLUGIN_DIR.'/'.basename(dirname($aktt_file)).'/');
 
 require_once(AKTT_PATH.'/classes/aktt.php');
 require_once(AKTT_PATH.'/classes/aktt_account.php');
