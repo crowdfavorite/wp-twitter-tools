@@ -54,6 +54,9 @@ add_action('init', array('AKTT', 'init'), 0);
  *	]
  */
 function aktt_shortcode_tweets($args) {
+	if (!AKTT::$enabled) {
+		return '';
+	}
 	if ($account = AKTT::default_account()) {
 		$username = $account->social_acct->name();
 	}
@@ -79,6 +82,9 @@ function aktt_shortcode_tweets($args) {
  *	[aktt_tweet id="138741523272577028"]
  */
 function aktt_shortcode_tweet($args) {
+	if (!AKTT::$enabled) {
+		return '';
+	}
 	if ($account = AKTT::default_account()) {
 		$username = $account->social_acct->name();
 	}

@@ -99,9 +99,5 @@ class AKTT_Widget extends WP_Widget {
 
 }
 add_action('widgets_init', function() {
-	AKTT::get_social_accounts();
-	if (count(AKTT::$accounts)) {
-		return register_widget('AKTT_Widget');
-	}
-	return false;
+	return register_widget('AKTT_Widget');
 });

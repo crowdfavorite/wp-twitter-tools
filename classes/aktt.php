@@ -1055,11 +1055,4 @@ jQuery(function($) {
 
 }
 
-if (!empty($_GET['backfill'])) {
-	add_action('wp', function() {
-		AKTT::backfill_tweets();
-		die('backfilled');
-	});
-}
-
 
