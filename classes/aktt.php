@@ -270,7 +270,7 @@ class AKTT {
 			'include_replies' => 0,
 		);
 		$taxonomies = array(
-			'aktt_account' => array(
+			'aktt_accounts' => array(
 				'var' => 'account',
 				'strip' => array()
 			),
@@ -280,7 +280,7 @@ class AKTT {
 			),
 			'aktt_mentions' => array(
 				'var' => 'mentions',
-				'strip' => '@'
+				'strip' => array('@')
 			)
 		);
 		foreach ($taxonomies as $data) {
@@ -332,14 +332,10 @@ class AKTT {
 				}
 			}
 // always hide broadcasts - can be overridden with filter below
-			$tax_query[] = array(
-				'taxonomy' => 'aktt_types',
-				'field' => 'slug',
-				'terms' => array('social-broadcast'),
-				'operator' => 'NOT IN'
+			$type_terms = array(
+				'not-a-social-broadcast'
 			);
-			$type_terms = array();
-// initial, more efficient check
+// slightly more efficient to use one term instead of multiple
 			if (!$params['include_rts'] && !$params['include_replies']) {
 				$type_terms[] = 'status';
 			}
@@ -347,13 +343,12 @@ class AKTT {
 				$type_terms[] = ($params['include_rts'] ? 'retweet' : 'not-a-retweet');
 				$type_terms[] = ($params['include_replies'] ? 'reply' : 'not-a-reply');
 			}
-			if (count($type_terms)) {
-				$tax_query[] = array(
-					'taxonomy' => 'aktt_types',
-					'field' => 'slug',
-					'terms' => $type_terms,
-				);
-			}
+			$tax_query[] = array(
+				'taxonomy' => 'aktt_types',
+				'field' => 'slug',
+				'terms' => $type_terms,
+				'operator' => 'IN'
+			);
 			$query_data['tax_query'] = $tax_query;
 		}
 		$query = new WP_Query(apply_filters('aktt_get_tweets', $query_data));
