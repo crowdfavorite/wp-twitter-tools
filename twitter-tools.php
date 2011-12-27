@@ -47,8 +47,8 @@ add_action('init', array('AKTT', 'init'), 0);
  *		account="alexkingorg"
  *		count="5" 
  *		offset="0"
- *		include_rts="1"
- *		include_replies="1"
+ *		include_rts="0"
+ *		include_replies="0"
  *		mentions="crowdfavorite,twittertools"
  *		hashtags="wordpress,plugin,twittertools"
  *	]
