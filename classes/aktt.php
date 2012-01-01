@@ -844,7 +844,7 @@ class AKTT {
 						die();
 					}
 					$account_found = $tweet_found = $tweet = false;
-					$usernames = wp_get_object_terms($t->post->ID, 'aktt_account');
+					$usernames = wp_get_object_terms($t->post->ID, 'aktt_accounts');
 					AKTT::get_social_accounts();
 					foreach (AKTT::$accounts as $id => $account) {
 						if ($usernames[0]->slug == $account->social_acct->name()) {
