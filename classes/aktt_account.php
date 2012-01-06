@@ -123,9 +123,11 @@ class AKTT_Account {
 			'include_entities' => 1, // include explicit hashtags and mentions
 			'include_rts' => 1, // include retweets
 		));
-		$content = $response->body();
-		if ($content->result == 'success') {
-			return $content->response;
+		if ($response !== false) {
+			$content = $response->body();
+			if ($content->result == 'success') {
+				return $content->response;
+			}
 		}
 		return false;
 	}
