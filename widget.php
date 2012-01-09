@@ -100,8 +100,9 @@ class AKTT_Widget extends WP_Widget {
 		include(AKTT_PATH.'views/widget.php');
 		echo $after_widget;
 	}
-
+	
+	static function register() {
+		register_widget('AKTT_Widget');
+	}
 }
-add_action('widgets_init', function() {
-	return register_widget('AKTT_Widget');
-});
+add_action('widgets_init', array('AKTT_Widget', 'register'));
