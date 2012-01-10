@@ -23,6 +23,8 @@ class AKTT {
 	 * @return void
 	 */
 	static function init() {
+		add_action('admin_notices', array('AKTT', 'admin_notices'));
+
 		self::$enabled = class_exists('Social');
 		if (!self::$enabled) {
 			self::add_admin_notice(sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'), 'error');
@@ -45,7 +47,6 @@ class AKTT {
 		// Admin Hooks
 		add_action('admin_init', array('AKTT', 'init_settings'), 0);
 		add_action('admin_init', array('AKTT', 'admin_controller'), 1);
-		add_action('admin_notices', array('AKTT', 'admin_notices'));
 		add_action('admin_menu', array('AKTT', 'admin_menu'));
 		add_filter('plugin_action_links', array('AKTT', 'plugin_action_links'), 10, 2);
 		add_action('admin_enqueue_scripts', array('AKTT', 'admin_enqueue_scripts'));

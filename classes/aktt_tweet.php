@@ -368,7 +368,7 @@ class AKTT_Tweet {
 			return;
 		}
 		$tax_input = array(
-			'aktt_account' => array($this->username()),
+			'aktt_accounts' => array($this->username()),
 			'aktt_hashtags' => array(),
 			'aktt_mentions' => array(),
 			'aktt_types' => array(),
