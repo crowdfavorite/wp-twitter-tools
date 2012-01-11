@@ -22,7 +22,7 @@ $name = 'aktt_v3_accounts['.$account->id.'][settings][%s]';
 			<h4><?php _e('Settings for blog posts', 'twitter-tools'); ?></h4>
 			<p>
 				<label class="left" for="<?php echo esc_attr(sprintf($name, 'blog_post_title')); ?>"><?php _e('Title prefix', 'twitter-tools'); ?></label>
-				<input type="text" name="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" id="<?php echo esc_attr(sprintf($name, 'blog_post_title')); ?>" value="<?php echo esc_attr($account->option('blog_post_title')); ?>" />  <span class="help"><?php _e('("Tweet:" = "<b>Tweet:</b> This is my tweet...")', 'twitter-tools'); ?></span>
+				<input type="text" name="<?php echo esc_attr(sprintf($name, 'blog_post_title')); ?>" id="<?php echo esc_attr(sprintf($name, 'blog_post_title')); ?>" value="<?php echo esc_attr($account->option('blog_post_title')); ?>" />  <span class="help"><?php _e('(<b>Tweet:</b> = <b>Tweet:</b> This is my tweet...)', 'twitter-tools'); ?></span>
 			</p>
 			<p>
 				<label class="left" for="<?php echo esc_attr(sprintf($name, 'post_author')); ?>"><?php _e('Author', 'twitter-tools'); ?></label>
