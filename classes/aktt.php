@@ -695,8 +695,10 @@ class AKTT {
 		if ($service == 'twitter') {
 			$accounts = get_option('aktt_v3_accounts');
 			if (is_array($accounts) && count($accounts) && isset($accounts[$id])) {
-				unset($accounts[$id]);
-				update_option('aktt_v3_accounts', $accounts);
+				if (Social::instance()->service('twitter')->account($id) === false) {
+					unset($accounts[$id]);
+					update_option('aktt_v3_accounts', $accounts);
+				}
 			}
 		}
 	}
