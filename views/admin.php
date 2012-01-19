@@ -34,11 +34,13 @@ table.form-table h3 {
 }
 .aktt-account {
 	border-bottom: 1px solid #ddd;
+	color: #666;
 	margin: 0;
 	padding: 0;
 }
 .aktt-account-enabled {
 	background: url(<?php echo esc_url(admin_url('images/yes.png')); ?>) right center no-repeat;
+	color: #333;
 	opacity: 1;
 }
 .aktt-account h3 {

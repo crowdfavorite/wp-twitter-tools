@@ -506,9 +506,10 @@ class AKTT {
 				
 				// Loop over each setting and sanitize
 				foreach (array_keys(AKTT_Account::$settings) as $key) {
-					if (isset($acct['settings'][$key])) {
-						$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					if (!isset($acct['settings'][$key])) {
+						$acct['settings'][$key] = null;
 					}
+					$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
 				}
 			}
 		}
@@ -997,13 +998,6 @@ jQuery(function($) {
 	});
 });
 </script>
-<?php
-	}
-	
-	static function admin_css() {
-?>
-<style type="text/css">
-</style>
 <?php
 	}
 	
