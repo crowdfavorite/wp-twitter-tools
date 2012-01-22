@@ -566,6 +566,8 @@ class AKTT {
 				$term = get_term_by('id', $value, 'category');
 				$value = (!$term) ? 0 : $term->term_id;
 				break;
+			default:
+				$value = do_action('aktt_sanitize_setting', $value, $key, $type);
 		}
 		return $value;
 	}

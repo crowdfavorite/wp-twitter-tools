@@ -498,6 +498,7 @@ class AKTT_Tweet {
 			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
 			'guid' => $this->guid().'-post'
 		);
+		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
 
 		$this->blog_post_id = wp_insert_post($data, true);
 		

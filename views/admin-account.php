@@ -58,6 +58,11 @@ wp_dropdown_categories(array(
 				</label>
 			</p>
 		</fieldset>
+<?php
+
+do_action('aktt_admin_account_settings_form');
+
+?>
 	</div>
 </div>
 
