@@ -23,6 +23,8 @@ class AKTT {
 	 * @return void
 	 */
 	static function init() {
+		add_action('admin_notices', array('AKTT', 'admin_notices'));
+
 		self::$enabled = class_exists('Social');
 		if (!self::$enabled) {
 			self::add_admin_notice(sprintf(__('Twitter Tools relies on the <a href="%s">Social plugin</a>, please install this plugin.', 'twitter-tools'), 'http://wordpress.org/extend/plugins/social/'), 'error');
@@ -45,7 +47,6 @@ class AKTT {
 		// Admin Hooks
 		add_action('admin_init', array('AKTT', 'init_settings'), 0);
 		add_action('admin_init', array('AKTT', 'admin_controller'), 1);
-		add_action('admin_notices', array('AKTT', 'admin_notices'));
 		add_action('admin_menu', array('AKTT', 'admin_menu'));
 		add_filter('plugin_action_links', array('AKTT', 'plugin_action_links'), 10, 2);
 		add_action('admin_enqueue_scripts', array('AKTT', 'admin_enqueue_scripts'));
@@ -270,7 +271,7 @@ class AKTT {
 			'include_replies' => 0,
 		);
 		$taxonomies = array(
-			'aktt_account' => array(
+			'aktt_accounts' => array(
 				'var' => 'account',
 				'strip' => array()
 			),
@@ -280,7 +281,7 @@ class AKTT {
 			),
 			'aktt_mentions' => array(
 				'var' => 'mentions',
-				'strip' => '@'
+				'strip' => array('@')
 			)
 		);
 		foreach ($taxonomies as $data) {
@@ -332,28 +333,22 @@ class AKTT {
 				}
 			}
 // always hide broadcasts - can be overridden with filter below
+			$type_terms = array(
+				'social-broadcast'
+			);
+// other exclusions - this is a NOT IN query
+			if (!$params['include_rts']) {
+				$type_terms[] = 'retweet';
+			}
+			if (!$params['include_replies']) {
+				$type_terms[] = 'reply';
+			}
 			$tax_query[] = array(
 				'taxonomy' => 'aktt_types',
 				'field' => 'slug',
-				'terms' => array('social-broadcast'),
+				'terms' => $type_terms,
 				'operator' => 'NOT IN'
 			);
-			$type_terms = array();
-// initial, more efficient check
-			if (!$params['include_rts'] && !$params['include_replies']) {
-				$type_terms[] = 'status';
-			}
-			else {
-				$type_terms[] = ($params['include_rts'] ? 'retweet' : 'not-a-retweet');
-				$type_terms[] = ($params['include_replies'] ? 'reply' : 'not-a-reply');
-			}
-			if (count($type_terms)) {
-				$tax_query[] = array(
-					'taxonomy' => 'aktt_types',
-					'field' => 'slug',
-					'terms' => $type_terms,
-				);
-			}
 			$query_data['tax_query'] = $tax_query;
 		}
 		$query = new WP_Query(apply_filters('aktt_get_tweets', $query_data));
@@ -510,9 +505,10 @@ class AKTT {
 				
 				// Loop over each setting and sanitize
 				foreach (array_keys(AKTT_Account::$settings) as $key) {
-					if (isset($acct['settings'][$key])) {
-						$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
+					if (!isset($acct['settings'][$key])) {
+						$acct['settings'][$key] = null;
 					}
+					$acct['settings'][$key] = self::sanitize_account_setting($key, $acct['settings'][$key]);
 				}
 			}
 		}
@@ -570,6 +566,8 @@ class AKTT {
 				$term = get_term_by('id', $value, 'category');
 				$value = (!$term) ? 0 : $term->term_id;
 				break;
+			default:
+				$value = do_action('aktt_sanitize_setting', $value, $key, $type);
 		}
 		return $value;
 	}
@@ -699,8 +697,14 @@ class AKTT {
 		if ($service == 'twitter') {
 			$accounts = get_option('aktt_v3_accounts');
 			if (is_array($accounts) && count($accounts) && isset($accounts[$id])) {
-				unset($accounts[$id]);
-				update_option('aktt_v3_accounts', $accounts);
+				$account = Social::instance()->service('twitter')->account($id);
+				// If the account being removed was only a universal account, it will no longer
+				// be available (false). If it is still around as a personal account (but is not
+				// a universal account), then the !universal() check will handle that.
+				if ($account === false or !$account->universal()) {
+					unset($accounts[$id]);
+					update_option('aktt_v3_accounts', $accounts);
+				}
 			}
 		}
 	}
@@ -849,7 +853,7 @@ class AKTT {
 						die();
 					}
 					$account_found = $tweet_found = $tweet = false;
-					$usernames = wp_get_object_terms($t->post->ID, 'aktt_account');
+					$usernames = wp_get_object_terms($t->post->ID, 'aktt_accounts');
 					AKTT::get_social_accounts();
 					foreach (AKTT::$accounts as $id => $account) {
 						if ($usernames[0]->slug == $account->social_acct->name()) {
@@ -907,11 +911,11 @@ class AKTT {
 					}
 					
 					self::import_tweets();
-					wp_redirect(add_query_arg(array(
-						'page' => self::$menu_page_slug,
-						'aktt_action' => 'tweets_updated'),
-						admin_url('options-general.php')
+					echo json_encode(array(
+						'result' => 'success',
+						'msg' => __('Tweets are downloading&hellip;', 'twitter-tools')
 					));
+					die();
 					break;
 				case 'upgrade-3.0':
 					// Permission checking
@@ -1004,13 +1008,6 @@ jQuery(function($) {
 <?php
 	}
 	
-	static function admin_css() {
-?>
-<style type="text/css">
-</style>
-<?php
-	}
-	
 	function log($msg) {
 		if (self::$debug) {
 			error_log($msg);
@@ -1053,13 +1050,6 @@ jQuery(function($) {
 		return 'http://twitter.com/'.urlencode($username).'/status/'.urlencode($id);
 	}
 
-}
-
-if (!empty($_GET['backfill'])) {
-	add_action('wp', function() {
-		AKTT::backfill_tweets();
-		die('backfilled');
-	});
 }
 
 

@@ -34,11 +34,13 @@ table.form-table h3 {
 }
 .aktt-account {
 	border-bottom: 1px solid #ddd;
+	color: #666;
 	margin: 0;
 	padding: 0;
 }
 .aktt-account-enabled {
 	background: url(<?php echo esc_url(admin_url('images/yes.png')); ?>) right center no-repeat;
+	color: #333;
 	opacity: 1;
 }
 .aktt-account h3 {
@@ -47,6 +49,9 @@ table.form-table h3 {
 	line-height: 48px;
 	margin: 0;
 	padding: 0 0 0 58px;
+}
+.aktt-none .aktt-account h3 {
+	cursor: default;
 }
 .aktt-account .settings {
 	display: none;
@@ -76,6 +81,13 @@ table.form-table h3 {
 }
 table.form-table .depends-on-create-posts .help {
 	color: #666;
+}
+.aktt-manual-update-request {
+	vertical-align: middle;
+	visibility: hidden;
+}
+.aktt-manual-update-running {
+	margin-left: 10px;
 }
 </style>
 <div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
@@ -144,7 +156,9 @@ if (AKTT::$enabled) {
 		if (empty(self::$accounts)) {
 ?>
 							<li class="aktt-none">
-								<?php _e('No Accounts.', 'twitter-tools'); ?>
+								<div class="aktt-account">
+									<h3 style="background: url(http://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?d=mm&f=y&s=48) left top no-repeat;"><?php _e('(no accounts)', 'twitter-tools'); ?></h3>
+								</div>
 							</li>
 <?php
 		}
@@ -171,6 +185,8 @@ if (AKTT::$enabled) {
 	<p>
 		<?php _e('Tweets are downloaded automatically every 15 minutes. Can\'t wait?', 'twitter-tools'); ?>
 		<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Download Tweets Now', 'twitter-tools'); ?></a>
+		<span class="aktt-manual-update-running"></span>
+		<img alt="" class="aktt-manual-update-request" src="<?php echo admin_url('images/wpspin_light.gif'); ?>">
 	</p>
 
 <?php
@@ -230,6 +246,27 @@ jQuery(function($) {
 	});
 	$('#aktt-account-list').css({
 		visibility: 'visible'
+	});
+	$('.aktt-manual-update').click(function(e) {
+		e.preventDefault();
+		var $this = $(this);
+		var $request = $('.aktt-manual-update-request');
+		var $running = $('.aktt-manual-update-running');
+		$this.hide();
+		$running.html('');
+		$request.css({ visibility: 'visible' });
+		$.get(
+			$this.attr('href'),
+			{
+				aktt_actions: 'manual_tweet_download'
+			},
+			function (response) {
+				$request.css({ visibility: 'hidden' });
+				$this.show();
+				$running.hide().html(response.msg).fadeIn();
+			},
+			'json'
+		);
 	});
 });
 </script>
