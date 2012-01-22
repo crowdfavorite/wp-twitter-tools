@@ -334,21 +334,20 @@ class AKTT {
 			}
 // always hide broadcasts - can be overridden with filter below
 			$type_terms = array(
-				'not-a-social-broadcast'
+				'social-broadcast'
 			);
-// slightly more efficient to use one term instead of multiple
-			if (!$params['include_rts'] && !$params['include_replies']) {
-				$type_terms[] = 'status';
+// other exclusions - this is a NOT IN query
+			if (!$params['include_rts']) {
+				$type_terms[] = 'retweet';
 			}
-			else {
-				$type_terms[] = ($params['include_rts'] ? 'retweet' : 'not-a-retweet');
-				$type_terms[] = ($params['include_replies'] ? 'reply' : 'not-a-reply');
+			if (!$params['include_replies']) {
+				$type_terms[] = 'reply';
 			}
 			$tax_query[] = array(
 				'taxonomy' => 'aktt_types',
 				'field' => 'slug',
 				'terms' => $type_terms,
-				'operator' => 'IN'
+				'operator' => 'NOT IN'
 			);
 			$query_data['tax_query'] = $tax_query;
 		}
@@ -697,6 +696,9 @@ class AKTT {
 			$accounts = get_option('aktt_v3_accounts');
 			if (is_array($accounts) && count($accounts) && isset($accounts[$id])) {
 				$account = Social::instance()->service('twitter')->account($id);
+				// If the account being removed was only a universal account, it will no longer
+				// be available (false). If it is still around as a personal account (but is not
+				// a universal account), then the !universal() check will handle that.
 				if ($account === false or !$account->universal()) {
 					unset($accounts[$id]);
 					update_option('aktt_v3_accounts', $accounts);
@@ -907,11 +909,11 @@ class AKTT {
 					}
 					
 					self::import_tweets();
-					wp_redirect(add_query_arg(array(
-						'page' => self::$menu_page_slug,
-						'aktt_action' => 'tweets_updated'),
-						admin_url('options-general.php')
+					echo json_encode(array(
+						'result' => 'success',
+						'msg' => __('Tweets are downloading&hellip;', 'twitter-tools')
 					));
+					die();
 					break;
 				case 'upgrade-3.0':
 					// Permission checking

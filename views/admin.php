@@ -82,6 +82,13 @@ table.form-table h3 {
 table.form-table .depends-on-create-posts .help {
 	color: #666;
 }
+.aktt-manual-update-request {
+	vertical-align: middle;
+	visibility: hidden;
+}
+.aktt-manual-update-running {
+	margin-left: 10px;
+}
 </style>
 <div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
 	<?php screen_icon(); ?>
@@ -178,6 +185,8 @@ if (AKTT::$enabled) {
 	<p>
 		<?php _e('Tweets are downloaded automatically every 15 minutes. Can\'t wait?', 'twitter-tools'); ?>
 		<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Download Tweets Now', 'twitter-tools'); ?></a>
+		<span class="aktt-manual-update-running"></span>
+		<img alt="" class="aktt-manual-update-request" src="<?php echo admin_url('images/wpspin_light.gif'); ?>">
 	</p>
 
 <?php
@@ -237,6 +246,27 @@ jQuery(function($) {
 	});
 	$('#aktt-account-list').css({
 		visibility: 'visible'
+	});
+	$('.aktt-manual-update').click(function(e) {
+		e.preventDefault();
+		var $this = $(this);
+		var $request = $('.aktt-manual-update-request');
+		var $running = $('.aktt-manual-update-running');
+		$this.hide();
+		$running.html('');
+		$request.css({ visibility: 'visible' });
+		$.get(
+			$this.attr('href'),
+			{
+				aktt_actions: 'manual_tweet_download'
+			},
+			function (response) {
+				$request.css({ visibility: 'hidden' });
+				$this.show();
+				$running.hide().html(response.msg).fadeIn();
+			},
+			'json'
+		);
 	});
 });
 </script>
