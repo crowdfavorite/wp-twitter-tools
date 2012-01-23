@@ -196,6 +196,19 @@ class AKTT_Tweet {
 		return (bool) (count($test) > 0);
 	}
 	
+	function exists_by_guid() {
+		global $wpdb;
+		$guid = $this->guid();
+		if (empty($guid)) {
+			return false;
+		}
+		$count = $wpdb->get_var($wpdb->prepare("
+			SELECT COUNT(ID)
+			FROM $wpdb->posts
+			WHERE guid = %s
+		", $guid));
+		return (bool) $count;
+	}
 	
 	/**
 	 * Checks the posts to see if this tweet has been attached to 

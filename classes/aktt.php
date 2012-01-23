@@ -31,6 +31,11 @@ class AKTT {
 			return;
 		}
 		
+		/* Set our default settings.  We need to do this at init() so 
+		that any text domains (i18n) are registered prior to us setting 
+		the labels. */
+		self::set_default_settings();
+		
 		self::register_post_type();
 		self::register_taxonomies();
 
@@ -55,11 +60,6 @@ class AKTT {
 		add_action('social_cron_15', array('AKTT', 'import_tweets'));
 		add_action('aktt_backfill_tweets', array('AKTT', 'backfill_tweets'));
 		
-		/* Set our default settings.  We need to do this at init() so 
-		that any text domains (i18n) are registered prior to us setting 
-		the labels. */
-		self::set_default_settings();
-		
 		// Set logging to admin screen settings
 		self::$debug = self::option('debug');
 	}
@@ -76,7 +76,7 @@ class AKTT {
 			'1' => __('Yes', 'twitter-tools'),
 			'0' => __('No', 'twitter-tools')
 		);
-		self::$settings = array(
+		$settings = array(
 			'tweet_admin_ui' => array(
 				'name' => 'tweet_admin_ui',
 				'value' => 1,
@@ -112,6 +112,7 @@ class AKTT {
 				),
 			),
 		);
+		self::$settings = apply_filters('aktt_default_settings', $settings);
 	}
 	
 	
@@ -567,7 +568,7 @@ class AKTT {
 				$value = (!$term) ? 0 : $term->term_id;
 				break;
 			default:
-				$value = do_action('aktt_sanitize_setting', $value, $key, $type);
+				$value = apply_filters('aktt_sanitize_setting', $value, $key, $type);
 		}
 		return $value;
 	}
