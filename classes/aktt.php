@@ -729,11 +729,11 @@ class AKTT {
 			// Download the tweets for that acct
 			if ($acct->option('enabled')) {
 				// could time out with lots of accounts, so a new request for each
-				$url = site_url('index.php?'.http_build_query(array(
+				$url = str_replace('&amp;', '&', site_url('index.php?'.http_build_query(array(
 					'aktt_action' => 'download_account_tweets',
 					'acct_id' => $id,
 					'social_api_key' => Social::option('system_cron_api_key')
-				)));
+				))));
 				self::log('Downloading tweets for '.$acct->social_acct->name().': '.$url);
 				wp_remote_get(
 					$url,
@@ -772,11 +772,11 @@ class AKTT {
 			if (empty($tweet_id)) {
 				continue;
 			}
-			$url = site_url('index.php?'.http_build_query(array(
+			$url = str_replace('&amp;', '&', site_url('index.php?'.http_build_query(array(
 				'aktt_action' => 'backfill_tweet_data',
 				'tweet_id' => $tweet_id,
 				'social_api_key' => Social::option('system_cron_api_key')
-			)));
+			))));
 			self::log('Backfilling tweet '.$tweet_id.' '.$url);
 			wp_remote_get(
 				$url,
