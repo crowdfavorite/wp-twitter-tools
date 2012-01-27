@@ -979,6 +979,13 @@ class AKTT {
 <script type="text/javascript">
 jQuery(function($) {
 	$('a[href="post-new.php?post_type=aktt_tweet"]').hide().parent('li').hide();
+	if (location.href.indexOf('edit-tags.php?taxonomy=aktt_accounts') != -1 ||
+		location.href.indexOf('edit-tags.php?taxonomy=aktt_mentions') != -1 ||
+		location.href.indexOf('edit-tags.php?taxonomy=aktt_hashtags') != -1 ||
+		location.href.indexOf('edit-tags.php?taxonomy=aktt_types') != -1
+	) {
+		$('#col-left .form-wrap').hide();
+	}
 });
 </script>
 <?php
