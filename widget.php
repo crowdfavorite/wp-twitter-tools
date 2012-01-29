@@ -2,13 +2,15 @@
 
 class AKTT_Widget extends WP_Widget {
 	function __construct() {
+		$title = __('Twitter Tools', 'twitter-tools');
+		$desc = __('Show recent tweets for a Twitter account.', 'twitter-tools');
 		// widget actual processes
 		parent::__construct(
 			'aktt-widget', 
-			__('Twitter Tools', 'twitter-tools'),
+			$title,
 			array(
 				'classname' => 'aktt-widget',
-				'description' => __('Show your recent tweets.', 'twitter-tools')
+				'description' => $desc
 			)
 		);
 	}
