@@ -733,7 +733,7 @@ class AKTT {
 					'aktt_action' => 'download_account_tweets',
 					'acct_id' => $id,
 					'social_api_key' => Social::option('system_cron_api_key')
-				));
+				), null, '&');
 				self::log('Downloading tweets for '.$acct->social_acct->name().': '.$url);
 				wp_remote_get(
 					$url,
@@ -776,7 +776,7 @@ class AKTT {
 				'aktt_action' => 'backfill_tweet_data',
 				'tweet_id' => $tweet_id,
 				'social_api_key' => Social::option('system_cron_api_key')
-			));
+			), null, '&');
 			self::log('Backfilling tweet '.$tweet_id.' '.$url);
 			wp_remote_get(
 				$url,
