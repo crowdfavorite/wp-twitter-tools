@@ -357,7 +357,7 @@ class AKTT {
 	}
 	
 	/**
-	 * Attach tweet data to post
+	 * Attach tweet data to post and replace entities in the post content
 	 *
 	 * @param stdClass $post
 	 * @return stdClass
@@ -366,6 +366,7 @@ class AKTT {
 		if ($post->post_type == self::$post_type && empty($post->tweet)) {
 			if ($raw_data = get_post_meta($post->ID, '_aktt_tweet_raw_data', true)) {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
+				$post->post_content = $post->tweet->link_entities();
 			}
 		}
 		return $post;
@@ -663,7 +664,7 @@ class AKTT {
 			
 			/* Call a static method to load the object, so we 
 			can ensure it was instantiated properly */
-			$o = AKTT_Account::load(&$acct_obj);
+			$o = AKTT_Account::load($acct_obj);
 			
 			// Assign the object, only if we were successfully created
 			if (is_a($o, 'AKTT_Account')) {
