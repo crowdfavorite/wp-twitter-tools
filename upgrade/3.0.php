@@ -192,6 +192,13 @@ function aktt_upgrade_30_run($count = 10) {
 			
 			$t->raw_data = json_encode($t->data);
 			
+			// skip if duplicate
+			if ($t->exists_by_guid()) {
+// already there, so mark as upgraded
+				$upgraded[] = intval($tweet->id);
+				continue;
+			}
+			
 			if ($t->add()) {
 // add meta - upgraded tweet
 				update_post_meta($t->post_id, '_aktt_upgraded_30', 1);

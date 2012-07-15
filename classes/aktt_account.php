@@ -12,7 +12,7 @@ class AKTT_Account {
 	
 	public static function set_default_settings() {
 		// Set default configs
-		AKTT_Account::$settings = array(
+		$settings = array(
 			'enabled' => array( // author to assign to new posts
 				'label' => __('Enabled', 'twitter-tools'),
 				'label_first' => false,
@@ -56,6 +56,7 @@ class AKTT_Account {
 				'type' 	=> 'no_html',
 			),
 		);
+		AKTT_Account::$settings = apply_filters('aktt_account_default_settings', $settings);
 	}
 	
 	/**
@@ -67,9 +68,9 @@ class AKTT_Account {
 	public static function load($acct = null) {
 		// Make sure we have the appropriate classes, etc. for the AKTT_Account object
 		if (
-			is_null($acct)
-			|| !is_object($acct) // Ensure we have an account object
-			|| !is_a($acct, 'Social_Service_Twitter_Account') // Ensure we have a Social_Twitter object
+			is_null($acct) ||
+			!is_object($acct) || // Ensure we have an account object
+			!is_a($acct, 'Social_Service_Twitter_Account') // Ensure we have a Social_Twitter object
 			) {
 			return false;
 		}
@@ -123,9 +124,11 @@ class AKTT_Account {
 			'include_entities' => 1, // include explicit hashtags and mentions
 			'include_rts' => 1, // include retweets
 		));
-		$content = $response->body();
-		if ($content->result == 'success') {
-			return $content->response;
+		if ($response !== false) {
+			$content = $response->body();
+			if ($content->result == 'success') {
+				return $content->response;
+			}
 		}
 		return false;
 	}

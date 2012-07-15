@@ -3,12 +3,12 @@
 Plugin Name: Twitter Tools
 Plugin URI: http://crowdfavorite.com/wordpress/plugins/twitter-tools/
 Description: An integration between your WordPress site and Twitter. Create posts from your tweets. Show your tweets in your sidebar. Relies on <a href="http://wordpress.org/extend/plugins/social/">Social</a>.
-Version: 3.0b1
+Version: 3.0b3
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
 */
 
-// Copyright (c) 2007-2011 Crowd Favorite, Ltd. All rights reserved.
+// Copyright (c) 2007-2012 Crowd Favorite, Ltd. All rights reserved.
 //
 // Released under the GPL license
 // http://www.opensource.org/licenses/gpl-license.php
@@ -33,7 +33,7 @@ else if (isset($network_plugin)) {
 	$aktt_file = $network_plugin;
 }
 @define('AKTT_FILE', $aktt_file);
-@define('AKTT_PATH', plugin_dir_path(__FILE__));
+@define('AKTT_PATH', WP_PLUGIN_DIR.'/'.basename(dirname($aktt_file)).'/');
 
 require_once(AKTT_PATH.'/classes/aktt.php');
 require_once(AKTT_PATH.'/classes/aktt_account.php');
@@ -47,13 +47,16 @@ add_action('init', array('AKTT', 'init'), 0);
  *		account="alexkingorg"
  *		count="5" 
  *		offset="0"
- *		include_rts="1"
- *		include_replies="1"
+ *		include_rts="0"
+ *		include_replies="0"
  *		mentions="crowdfavorite,twittertools"
  *		hashtags="wordpress,plugin,twittertools"
  *	]
  */
 function aktt_shortcode_tweets($args) {
+	if (!AKTT::$enabled) {
+		return '';
+	}
 	if ($account = AKTT::default_account()) {
 		$username = $account->social_acct->name();
 	}
@@ -79,6 +82,9 @@ function aktt_shortcode_tweets($args) {
  *	[aktt_tweet id="138741523272577028"]
  */
 function aktt_shortcode_tweet($args) {
+	if (!AKTT::$enabled) {
+		return '';
+	}
 	if ($account = AKTT::default_account()) {
 		$username = $account->social_acct->name();
 	}

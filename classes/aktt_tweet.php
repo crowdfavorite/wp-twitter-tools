@@ -196,6 +196,19 @@ class AKTT_Tweet {
 		return (bool) (count($test) > 0);
 	}
 	
+	function exists_by_guid() {
+		global $wpdb;
+		$guid = $this->guid();
+		if (empty($guid)) {
+			return false;
+		}
+		$count = $wpdb->get_var($wpdb->prepare("
+			SELECT COUNT(ID)
+			FROM $wpdb->posts
+			WHERE guid = %s
+		", $guid));
+		return (bool) $count;
+	}
 	
 	/**
 	 * Checks the posts to see if this tweet has been attached to 
@@ -368,7 +381,7 @@ class AKTT_Tweet {
 			return;
 		}
 		$tax_input = array(
-			'aktt_account' => array($this->username()),
+			'aktt_accounts' => array($this->username()),
 			'aktt_hashtags' => array(),
 			'aktt_mentions' => array(),
 			'aktt_types' => array(),
@@ -498,6 +511,7 @@ class AKTT_Tweet {
 			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
 			'guid' => $this->guid().'-post'
 		);
+		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
 
 		$this->blog_post_id = wp_insert_post($data, true);
 		

@@ -8,9 +8,10 @@ if (isset($tweet->tweet)) {
 echo wptexturize($content);
 
 if (isset($tweet->tweet)) {
-	if ($tweet->tweet->is_reply()) {
+	$reply_id = $tweet->tweet->reply_id();
+	if (!empty($reply_id)) {
 ?>
- <a href="<?php echo esc_url(AKTT::status_url($tweet->tweet->reply_screen_name(), $tweet->tweet->reply_id())); ?>" class="aktt_tweet_reply"><?php printf(__('in reply to %s', 'twitter-tools'), esc_html($tweet->tweet->reply_screen_name())); ?></a>
+ <a href="<?php echo esc_url(AKTT::status_url($tweet->tweet->reply_screen_name(), $reply_id)); ?>" class="aktt_tweet_reply"><?php printf(__('in reply to %s', 'twitter-tools'), esc_html($tweet->tweet->reply_screen_name())); ?></a>
 <?php
 	}
 ?>

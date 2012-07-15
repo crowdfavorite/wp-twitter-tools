@@ -2,19 +2,25 @@
 
 class AKTT_Widget extends WP_Widget {
 	function __construct() {
+		$title = __('Twitter Tools', 'twitter-tools');
+		$desc = __('Show recent tweets for a Twitter account.', 'twitter-tools');
 		// widget actual processes
 		parent::__construct(
 			'aktt-widget', 
-			__('Twitter Tools', 'twitter-tools'),
+			$title,
 			array(
 				'classname' => 'aktt-widget',
-				'description' => __('Show your recent tweets.', 'twitter-tools')
+				'description' => $desc
 			)
 		);
 	}
 
 	function form($instance) {
+		if (!AKTT::$enabled) {
+			return '';
+		}
 		$account_options = array();
+		AKTT::get_social_accounts();
 		foreach (AKTT::$accounts as $account) {
 			if ($account->option('enabled')) {
 				$account_options[] = $account->social_acct->name();
@@ -96,12 +102,9 @@ class AKTT_Widget extends WP_Widget {
 		include(AKTT_PATH.'views/widget.php');
 		echo $after_widget;
 	}
-
-}
-add_action('widgets_init', function() {
-	AKTT::get_social_accounts();
-	if (count(AKTT::$accounts)) {
-		return register_widget('AKTT_Widget');
+	
+	static function register() {
+		register_widget('AKTT_Widget');
 	}
-	return false;
-});
+}
+add_action('widgets_init', array('AKTT_Widget', 'register'));
