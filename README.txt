@@ -1,8 +1,8 @@
 === Twitter Tools ===
 Contributors: alexkingorg, crowdfavorite
 Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, shortcode
-Requires at least: 3.3
-Tested up to: 3.3.1
+Requires at least: 3.4
+Tested up to: 3.4.1
 Stable tag: 3.0
 
 
