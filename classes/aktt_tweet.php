@@ -442,11 +442,12 @@ class AKTT_Tweet {
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
-		$this->post_id = wp_insert_post($data, true);
-		if (is_wp_error($this->post_id)) {
-			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
+		$post_id = wp_insert_post(addslashes_deep($data), true);
+		if (is_wp_error($post_id)) {
+			AKTT::log('WP_Error:: '.$post_id->get_error_message());
 			return false;
 		}
+		$this->post_id = $post_id;
 
 // have to set up taxonomies after the insert in case we are in a context without
 // a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
