@@ -846,6 +846,23 @@ class AKTT {
 					}
 					die();
 					break;
+				case 'import_tweet':
+// check for status_id && auth key
+					if (empty($_GET['tweet_id']) || !AKTT::social_key_auth()) {
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+// check for account_name
+					$username = (!empty($_GET['username']) ? stripslashes($_GET['username']) : null);
+// download tweet
+					$tweet = self::download_tweet($_GET['tweet_id'], $usename);
+					if (!is_a($tweet, 'stdClass')) {
+						wp_die('Failed to download tweet.');
+					}
+// store tweet
+					$t = new AKTT_Tweet($tweet);
+					$t->add();
+					die();
+					break;
 				case 'backfill_tweet_data':
 					if (empty($_GET['tweet_id']) || !AKTT::social_key_auth()) {
 						wp_die(__('Sorry, try again.', 'twitter-tools'));
@@ -854,39 +871,11 @@ class AKTT {
 					if (!$t->get_post()) {
 						die();
 					}
-					$account_found = $tweet_found = $tweet = false;
 					$usernames = wp_get_object_terms($t->post->ID, 'aktt_accounts');
-					AKTT::get_social_accounts();
-					foreach (AKTT::$accounts as $id => $account) {
-						if ($usernames[0]->slug == $account->social_acct->name()) {
-							// proper account stored as $account
-							$account_found = true;
-							break;
-						}
-					}
-					if ($account_found) {
-						$response = Social::instance()->service('twitter')->request(
-							$account->social_acct,
-							'statuses/show/'.urlencode($t->id).'.json',
-								array(
-								'include_entities' => 1, // include explicit hashtags and mentions
-								'include_rts' => 1, // include retweets
-							)
-						);
-						$content = $response->body();
-						if ($content->result == 'success') {
-							$tweets = $content->response;
-							if (!$tweets || !is_array($tweets) || count($tweets) != 1) {
-								$tweet = $tweet[0];
-							}
-						}
-					}
-					if (!$tweet) {
-						$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($t->id).'.json?include_entities=true', array());
-						if (!is_wp_error($response)) {
-							$tweet = json_decode(wp_remote_retrieve_body($response));
-						}
-					}
+					$username = $usernames[0]->slug;
+					
+					$tweet = self::download_tweet($_GET['tweet_id'], $usename);
+					
 					if (!is_a($tweet, 'stdClass')) {
 						wp_die('Failed to download tweet');
 					}
@@ -1057,6 +1046,44 @@ jQuery(function($) {
 	
 	static function status_url($username, $id) {
 		return 'http://twitter.com/'.urlencode($username).'/status/'.urlencode($id);
+	}
+	
+	static function download_tweet($status_id, $username = null) {
+		$account_found = $tweet = false;
+		if (!empty($username)) {
+			AKTT::get_social_accounts();
+			foreach (AKTT::$accounts as $id => $account) {
+				if ($username == $account->social_acct->name()) {
+					// proper account stored as $account
+					$account_found = true;
+					break;
+				}
+			}
+			if ($account_found) {
+				$response = Social::instance()->service('twitter')->request(
+					$account->social_acct,
+					'statuses/show/'.urlencode($t->id).'.json',
+						array(
+						'include_entities' => 1, // include explicit hashtags and mentions
+						'include_rts' => 1, // include retweets
+					)
+				);
+				$content = $response->body();
+				if ($content->result == 'success') {
+					$tweets = $content->response;
+					if (!$tweets || !is_array($tweets) || count($tweets) != 1) {
+						$tweet = $tweet[0];
+					}
+				}
+			}
+		}
+		if (!$tweet) {
+			$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($t->id).'.json?include_entities=true', array());
+			if (!is_wp_error($response)) {
+				$tweet = json_decode(wp_remote_retrieve_body($response));
+			}
+		}
+		return $tweet;
 	}
 
 }
