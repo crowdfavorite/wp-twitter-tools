@@ -181,8 +181,7 @@ class AKTT_Tweet {
 	 */
 	static function twdate_to_time($date) {
 		$parts = explode(' ', $date);
-		$date = strtotime($parts[1].' '.$parts[2].', '.$parts[5].' '.$parts[3]);
-		return $date;
+		return strtotime($parts[1].' '.$parts[2].', '.$parts[5].' '.$parts[3]);
 	}
 	
 	
@@ -424,7 +423,6 @@ class AKTT_Tweet {
 			}
 		}
 	}
-	
 	
 	/**
 	 * Creates an aktt_tweet post_type with its meta
