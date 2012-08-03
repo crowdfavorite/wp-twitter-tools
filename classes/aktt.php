@@ -860,7 +860,9 @@ class AKTT {
 					}
 // store tweet
 					$t = new AKTT_Tweet($tweet);
-					$t->add();
+					if (!$t->exists_by_guid()) {
+						$t->add();
+					}
 					die();
 					break;
 				case 'backfill_tweet_data':
