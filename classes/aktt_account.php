@@ -49,6 +49,12 @@ class AKTT_Account {
 				'value' => 1,
 				'type' 	=> 'int',
 			),
+			'exclude_retweets' => array( // Exclude RTs from creating their own blog posts?
+				'label' => __('Exclude re-tweets from post creation', 'twitter-tools'),
+				'label_first' => false,
+				'value' => 1,
+				'type' 	=> 'int',
+			),
 			'blog_post_title' => array( // Structure of the blog post Title
 				'label' => __('Blog Post Title Prefix', 'twitter-tools'),
 				'label_first' => true,
@@ -184,6 +190,9 @@ class AKTT_Account {
 				
 				// AND NOT we aren't supposed to do reply tweets and this is a reply
 				&& !($this->option('exclude_reply_tweets') && $t->is_reply())
+				
+				// AND NOT we aren't supposed to do re-tweets and this is a RT
+				&& !($this->option('exclude_retweets') && $t->is_retweet())
 				
 				// AND this tweet hasn't created a post yet
 				&& !$t->tweet_post_exists()

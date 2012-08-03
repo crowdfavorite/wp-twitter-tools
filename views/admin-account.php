@@ -57,6 +57,12 @@ wp_dropdown_categories(array(
 					<?php _e('Don\'t create posts for reply tweets', 'twitter-tools'); ?>
 				</label>
 			</p>
+			<p>
+				<label class="right" for="<?php echo esc_attr(sprintf($name, 'exclude_retweets')); ?>">
+					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'exclude_retweets')); ?>" id="<?php echo esc_attr(sprintf($name, 'exclude_retweets')); ?>" value="1" <?php checked('1', $account->option('exclude_retweets')); ?> />
+					<?php _e('Don\'t create posts for re-tweets (RTs)', 'twitter-tools'); ?>
+				</label>
+			</p>
 		</fieldset>
 <?php
 
