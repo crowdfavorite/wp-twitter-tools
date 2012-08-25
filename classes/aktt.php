@@ -826,7 +826,7 @@ class AKTT {
 	
 	
 	/**
-	 * Request handler for admin
+	 * Request handler
 	 *
 	 * @return void
 	 */
@@ -854,7 +854,7 @@ class AKTT {
 // check for account_name
 					$username = (!empty($_GET['username']) ? stripslashes($_GET['username']) : null);
 // download tweet
-					$tweet = self::download_tweet($_GET['tweet_id'], $usename);
+					$tweet = self::download_tweet($_GET['tweet_id'], $username);
 					if (!is_a($tweet, 'stdClass')) {
 						wp_die('Failed to download tweet.');
 					}
@@ -1080,7 +1080,7 @@ jQuery(function($) {
 			}
 		}
 		if (!$tweet) {
-			$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($t->id).'.json?include_entities=true', array());
+			$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($status_id).'.json?include_entities=true', array());
 			if (!is_wp_error($response)) {
 				$tweet = json_decode(wp_remote_retrieve_body($response));
 			}
