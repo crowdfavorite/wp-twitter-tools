@@ -116,4 +116,29 @@ function aktt_sidebar_tweets($count = 5, $form = null) {
 	echo do_shortcode('[aktt_tweets count="'.intval($count).'"]');
 }
 
+function aktt_sideload_image($file, $post_id, $desc = null) {
+	// Can be replaced with `wp_sideload_image` once WP 3.5 is released
+	if (function_exists('wp_sideload_image')) {
+		return wp_sideload_image($file, $post_id, $desc);
+	}
+	if ( empty( $file ) ) {
+		return new WP_Error( '', 'File URL cannot be empty.' );
+	}
 
+	// Download file to temp location
+	$tmp = download_url( $file );
+
+	// Set variables for storage
+	// fix file filename for query strings
+	preg_match( '/[^\?]+\.(jpe?g|jpe|gif|png)\b/i', $file, $matches );
+	$file_array['name'] = basename($matches[0]);
+	$file_array['tmp_name'] = $tmp;
+
+	// If error storing temporarily, unlink
+	if ( is_wp_error( $tmp ) ) {
+		@unlink($file_array['tmp_name']);
+		$file_array['tmp_name'] = '';
+	}
+
+	return media_handle_sideload( $file_array, $post_id, $desc );
+}

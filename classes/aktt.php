@@ -172,6 +172,7 @@ class AKTT {
 			),
 			'has_archive' => true,
 		));
+		add_theme_support('post-thumbnails', array('aktt_tweet'));
 	}
 	
 	
@@ -367,6 +368,10 @@ class AKTT {
 			if ($raw_data = get_post_meta($post->ID, '_aktt_tweet_raw_data', true)) {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
 				$post->post_content = $post->tweet->link_entities();
+			}
+			if (has_post_thumbnail($post->ID)) {
+				$size = apply_filters('aktt_featured_image_size', 'medium');
+				$post->post_content .= "\n\n".get_the_post_thumbnail(null, $size);
 			}
 		}
 		return $post;
