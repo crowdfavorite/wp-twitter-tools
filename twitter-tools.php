@@ -117,6 +117,9 @@ function aktt_sidebar_tweets($count = 5, $form = null) {
 }
 
 function aktt_sideload_image($file, $post_id, $desc = null) {
+	if (!function_exists('wp_sideload_image') && !function_exists('download_url')) {
+		include(ABSPATH.'wp-admin/includes/file.php');
+	}
 	// Can be replaced with `wp_sideload_image` once WP 3.5 is released
 	if (function_exists('wp_sideload_image')) {
 		return wp_sideload_image($file, $post_id, $desc);
@@ -140,5 +143,11 @@ function aktt_sideload_image($file, $post_id, $desc = null) {
 		$file_array['tmp_name'] = '';
 	}
 
+	if (!function_exists('media_handle_sideload')) {
+		include(ABSPATH.'wp-admin/includes/media.php');
+	}
+	if (!function_exists('wp_read_image_metadata')) {
+		include(ABSPATH.'wp-admin/includes/image.php');
+	}
 	return media_handle_sideload( $file_array, $post_id, $desc );
 }

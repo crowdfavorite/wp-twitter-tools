@@ -476,7 +476,9 @@ class AKTT_Tweet {
 
 // if there is a photo, add it
 		$this->featured_image_id = $this->sideload_image();
-		update_post_meta($this->post_id, '_thumbnail_id', $this->featured_image_id);
+		if (!empty($this->featured_image_id)) {
+			update_post_meta($this->post_id, '_thumbnail_id', $this->featured_image_id);
+		}
 		
 		update_post_meta($this->post_id, '_aktt_tweet_id', $this->id());
 		update_post_meta($this->post_id, '_aktt_tweet_raw_data', addslashes($this->raw_data));
