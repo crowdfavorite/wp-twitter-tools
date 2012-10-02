@@ -40,6 +40,7 @@ require_once(AKTT_PATH.'/classes/aktt_account.php');
 require_once(AKTT_PATH.'/classes/aktt_tweet.php');
 require_once(AKTT_PATH.'/widget.php');
 
+add_action('after_setup_theme', array('AKTT', 'after_setup_theme'), 9999);
 add_action('init', array('AKTT', 'init'), 0);
 
 /* Shortcode syntax

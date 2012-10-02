@@ -22,6 +22,26 @@ class AKTT {
 	 *
 	 * @return void
 	 */
+	static function after_setup_theme() {
+		self::add_thumbnail_support();
+	}
+	
+	static function add_thumbnail_support() {
+		$thumbnails = get_theme_support('post-thumbnails');
+		if (is_array($thumbnails)) {
+			add_theme_support('post-thumbnails', array_merge($thumbnails, array(self::$post_type)));
+		}
+		else if (!$thumbnails) {
+			add_theme_support('post-thumbnails', array(self::$post_type));
+		}
+		// else already enabled for all post types
+	}
+
+	/**
+	 * Sets whether or not the plugin should be enabled.  Also initialize the plugin's settings.
+	 *
+	 * @return void
+	 */
 	static function init() {
 		add_action('admin_notices', array('AKTT', 'admin_notices'));
 
@@ -163,6 +183,7 @@ class AKTT {
 			),
 			'supports' => array(
 				'editor',
+				'thumbnail',
 			),
 			'public' => (bool) self::option('tweet_visibility'),
 			'show_ui' => (bool) self::option('tweet_admin_ui'),
@@ -172,7 +193,6 @@ class AKTT {
 			),
 			'has_archive' => true,
 		));
-		add_theme_support('post-thumbnails', array('aktt_tweet'));
 	}
 	
 	
