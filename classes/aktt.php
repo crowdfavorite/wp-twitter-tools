@@ -213,7 +213,8 @@ class AKTT {
 					'singular_name' => __('Account', 'twitter-tools')
 				),
 				'rewrite' => array(
-					'slug' => 'tweet-accounts'
+					'slug' => 'tweet-accounts',
+					'with_front' => false
 				),
 			)),
 			'aktt_mentions' => array_merge($defaults, array(
@@ -222,7 +223,8 @@ class AKTT {
 					'singular_name' => __('Mention', 'twitter-tools')
 				),
 				'rewrite' => array(
-					'slug' => 'tweet-mentions'
+					'slug' => 'tweet-mentions',
+					'with_front' => false
 				),
 			)),
 			'aktt_hashtags' => array_merge($defaults, array(
@@ -231,7 +233,8 @@ class AKTT {
 					'singular_name' => __('Hashtag', 'twitter-tools')
 				),
 				'rewrite' => array(
-					'slug' => 'tweet-hashtags'
+					'slug' => 'tweet-hashtags',
+					'with_front' => false
 				),
 			)),
 			'aktt_types' => array_merge($defaults, array(
@@ -240,7 +243,8 @@ class AKTT {
 					'singular_name' => __('Type', 'twitter-tools')
 				),
 				'rewrite' => array(
-					'slug' => 'tweet-types'
+					'slug' => 'tweet-types',
+					'with_front' => false
 				),
 				'public' => false,
 				'show_ui' => false,
