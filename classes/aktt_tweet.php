@@ -2,6 +2,7 @@
 
 class AKTT_Tweet {
 	var $post_id = null;
+	var $featured_image_id = null;
 	var $raw_data = null;
 		
 	/**
@@ -181,8 +182,7 @@ class AKTT_Tweet {
 	 */
 	static function twdate_to_time($date) {
 		$parts = explode(' ', $date);
-		$date = strtotime($parts[1].' '.$parts[2].', '.$parts[5].' '.$parts[3]);
-		return $date;
+		return strtotime($parts[1].' '.$parts[2].', '.$parts[5].' '.$parts[3]);
 	}
 	
 	
@@ -425,7 +425,37 @@ class AKTT_Tweet {
 		}
 	}
 	
+
+	/**
+	 * Does this tweet have a photo?
+	 *
+	 * @return bool
+	 */
+	function has_image() {
+		return (
+			!empty($this->data->entities->media) && 
+			$this->data->entities->media[0]->type == 'photo'
+		);
+	}
 	
+
+	/**
+	 * Download and save tweet image
+	 *
+	 * @return mixed int|null
+	 */
+	function sideload_image() {
+		if ($this->has_image()) {
+			$url = $this->data->entities->media[0]->media_url;
+			$id = aktt_sideload_image($url, $this->post_id);
+			if (!is_wp_error($id)) {
+				return $id;
+			}
+		}
+		return null;
+	}
+	
+
 	/**
 	 * Creates an aktt_tweet post_type with its meta
 	 *
@@ -444,15 +474,22 @@ class AKTT_Tweet {
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
-		$this->post_id = wp_insert_post($data, true);
-		if (is_wp_error($this->post_id)) {
-			AKTT::log('WP_Error:: '.$this->post_id->get_error_message());
+		$post_id = wp_insert_post(addslashes_deep($data), true);
+		if (is_wp_error($post_id)) {
+			AKTT::log('WP_Error:: '.$post_id->get_error_message());
 			return false;
 		}
+		$this->post_id = $post_id;
 
-// have to set up taxonomies after the insert in case we are in a context without
-// a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
+		// have to set up taxonomies after the insert in case we are in a context without
+		// a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
 		$this->set_taxonomies();
+
+		// if there is a photo, add it
+		$this->featured_image_id = $this->sideload_image();
+		if (!empty($this->featured_image_id)) {
+			update_post_meta($this->post_id, '_thumbnail_id', $this->featured_image_id);
+		}
 		
 		update_post_meta($this->post_id, '_aktt_tweet_id', $this->id());
 		update_post_meta($this->post_id, '_aktt_tweet_raw_data', addslashes($this->raw_data));
@@ -497,10 +534,17 @@ class AKTT_Tweet {
 		// Add a space if we have a prefix
 		$title_prefix = empty($title_prefix) ? '' : $title_prefix.' ';
 
+		$post_content = $this->link_entities(false);
+		// Append image to post if there is one, can't set it as a featured image until after save
+		if (!empty($this->featured_image_id)) {
+			$size = apply_filters('aktt_featured_image_size', 'medium');
+			$post_content .= "\n\n".wp_get_attachment_image($this->featured_image_id, $size);
+		}
+		
 		// Build the post data
 		$data = array(
 			'post_title' => $title_prefix.$this->title(),
-			'post_content' => $this->link_entities(false),
+			'post_content' => $post_content,
 			'post_author' => $post_author,
 			'tax_input' => array(
 				'category' => array($post_category),
@@ -521,6 +565,10 @@ class AKTT_Tweet {
 		}
 
 		set_post_format($this->blog_post_id, 'status');
+		
+		if (!empty($this->featured_image_id)) {
+			update_post_meta($this->blog_post_id, '_thumbnail_id', $this->featured_image_id);
+		}
 
 		update_post_meta($this->blog_post_id, '_aktt_tweet_id', $this->id()); // twitter's tweet ID
 		update_post_meta($this->blog_post_id, '_aktt_tweet_post_id', $this->post_id); // twitter's post ID
