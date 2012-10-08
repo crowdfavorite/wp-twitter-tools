@@ -106,7 +106,9 @@ All of Social's features (broadcasting, comment display, looking for responses o
 
 = Will Twitter Tools pull in my entire tweet archive from Twitter? =
 
-Twitter Tools starts archiving from the time you enable it. It does not try to download your entire tweet history. However, there is code in Twitter Tools that can be scripted to download and import tweets. You can put together the pieces with your own code to create the combination of features you desire.
+Twitter Tools starts archiving from the time you enable it. It does not try to download your entire tweet history. However, there is code in Twitter Tools that can be scripted to download and import tweets. You can put together the pieces with your own code to create the combination of features you desire. Here's an Gist to get you started:
+
+https://gist.github.com/3470627
 
 
 == Changelog ==
