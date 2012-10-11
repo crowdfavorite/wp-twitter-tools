@@ -101,7 +101,7 @@ Get creative! Here are some examples of ways to use more of the full Twitter dat
 - linking to "in reply to" tweets
 
 
-== FAQ ==
+== Frequently Asked Questions ==
 
 = What if I don't want to use Social's comment display? =
 
