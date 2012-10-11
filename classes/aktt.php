@@ -1080,6 +1080,9 @@ jQuery(function($) {
 	}
 	
 	static function download_tweet($status_id, $username = null) {
+		if (empty(AKTT::$accounts)) {
+			return false;
+		}
 		$account_found = $tweet = false;
 		if (!empty($username)) {
 			AKTT::get_social_accounts();
@@ -1090,28 +1093,23 @@ jQuery(function($) {
 					break;
 				}
 			}
-			if ($account_found) {
-				$response = Social::instance()->service('twitter')->request(
-					$account->social_acct,
-					'statuses/show/'.urlencode($t->id).'.json',
-						array(
-						'include_entities' => 1, // include explicit hashtags and mentions
-						'include_rts' => 1, // include retweets
-					)
-				);
-				$content = $response->body();
-				if ($content->result == 'success') {
-					$tweets = $content->response;
-					if (!$tweets || !is_array($tweets) || count($tweets) != 1) {
-						$tweet = $tweet[0];
-					}
-				}
+			if (!$account_found) {
+				$account = AKTT::$accounts[0]; // use any account
 			}
-		}
-		if (!$tweet) {
-			$response = wp_remote_get('http://api.twitter.com/1/statuses/show/'.urlencode($status_id).'.json?include_entities=true', array());
-			if (!is_wp_error($response)) {
-				$tweet = json_decode(wp_remote_retrieve_body($response));
+			$response = Social::instance()->service('twitter')->request(
+				$account->social_acct,
+				'statuses/show/'.urlencode($t->id).'.json',
+					array(
+					'include_entities' => 1, // include explicit hashtags and mentions
+					'include_rts' => 1, // include retweets
+				)
+			);
+			$content = $response->body();
+			if ($content->result == 'success') {
+				$tweets = $content->response;
+				if (!$tweets || !is_array($tweets) || count($tweets) != 1) {
+					$tweet = $tweet[0];
+				}
 			}
 		}
 		return $tweet;
