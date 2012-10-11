@@ -4,13 +4,16 @@ Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, sho
 Requires at least: 3.4
 Tested up to: 3.4.2
 Stable tag: 3.0
+License: GPLv2
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 Twitter Tools is a plugin that creates a complete integration between your WordPress blog and your Twitter account.
 
-== Details ==
+== Description ==
 
 Twitter Tools integrates with Twitter by giving you the following functionality:
 
+* Connect multiple Twitter accounts (via Social)
 * Archive the tweets from your Twitter accounts (downloaded every 10 minutes)
 * Create a blog post from each of your tweets
 * Create a tweet on Twitter whenever you post in your blog, with a link to the blog post (via Social)
@@ -21,7 +24,7 @@ Twitter Tools leverages Social's connection to Twitter so that you don't have to
 
 == Installation ==
 
-_Twitter Tools relies on the Social plugin to connect to Twitter. If you aren't already using this plugin please install it before installing Twitter Tools._
+_Twitter Tools relies on the <a href="http://wordpress.org/extend/plugins/social/">Social</a> plugin to connect to Twitter. If you aren't already using this plugin please install it before installing Twitter Tools._
 
 1. Download the plugin archive and expand it (you've likely already done this).
 2. Put the 'twitter-tools' directory into your wp-content/plugins/ directory.
@@ -110,6 +113,18 @@ Twitter Tools starts archiving from the time you enable it. It does not try to d
 
 https://gist.github.com/3470627
 
+== Screenshots ==
+
+1. Show your tweets on your site (optional).
+2. Tweets can be viewed by account, @mention or #hashtag.
+3. Manage your tweets in the standard WordPress admin interface.
+4. View tweets by @mention, #hashtag, etc.
+5. Easy interface to for per-account settings.
+
+
+== Upgrade Notice ==
+
+Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012.
 
 == Changelog ==
 
