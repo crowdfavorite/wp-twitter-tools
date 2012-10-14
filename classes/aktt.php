@@ -110,7 +110,7 @@ class AKTT {
 				'label' => __('Create URLs for tweets', 'twitter-tools'),
 				'type' => 'radio',
 				'options' => array(
-					'1' => sprintf(__('Yes <span class="help">(%s)</span>', 'twitter-tools'), site_url('tweet/{tweet-id}')),
+					'1' => sprintf(__('Yes <span class="help">(%s)</span>', 'twitter-tools'), home_url('tweet/{tweet-id}')),
 					'0' => __('No', 'twitter-tools')
 				),
 			),
