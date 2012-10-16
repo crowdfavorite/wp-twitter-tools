@@ -128,6 +128,12 @@ Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/ex
 
 == Changelog ==
 
+= 3.0.1 =
+
+* Set categories and post tags properly on posts created from tweets
+* Set GMT date explicitly for blog posts created from tweets (fixes time offset issue)
+
+
 = 3.0 =
 
 * Complete rewrite!
