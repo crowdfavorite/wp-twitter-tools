@@ -546,10 +546,11 @@ class AKTT_Tweet {
 			'post_title' => $title_prefix.$this->title(),
 			'post_content' => $post_content,
 			'post_author' => $post_author,
-			'tax_input' => array(
-				'category' => array($post_category),
-				'post_tag' => array_map('trim', explode(',', $post_tags)),
-			),
+// can't set taxonomies here due to permissions checks in wp_insert_post
+// 			'tax_input' => array(
+// 				'category' => array($post_category),
+// 				'post_tag' => array_map('trim', explode(',', $post_tags)),
+// 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
 			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
@@ -563,6 +564,10 @@ class AKTT_Tweet {
 			AKTT::log('WP_Error:: '.$this->blog_post_id->get_error_message());
 			return false;
 		}
+		
+		// set taxonomies
+		wp_set_object_terms($this->blog_post_id, intval($post_category), 'category');
+		wp_set_object_terms($this->blog_post_id, array_map('trim', explode(',', $post_tags)), 'post_tag');
 
 		set_post_format($this->blog_post_id, 'status');
 		
