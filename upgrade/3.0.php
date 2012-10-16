@@ -160,7 +160,7 @@ jQuery(function($) {
 	echo aktt_upgrade_30_shell(__('Twitter Tools Upgrade', 'twitter-tools'), $body, $head, $foot);
 }
 
-function aktt_upgrade_30_run($count = 10) {
+function aktt_upgrade_30_run($count = 25) {
 	global $wpdb;
 // pull next tweet(s)
 	$count = intval($count);

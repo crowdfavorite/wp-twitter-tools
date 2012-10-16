@@ -3,7 +3,7 @@ Contributors: alexkingorg, crowdfavorite
 Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, shortcode, social
 Requires at least: 3.4
 Tested up to: 3.4.2
-Stable tag: 3.0
+Stable tag: 3.0.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -101,7 +101,7 @@ Get creative! Here are some examples of ways to use more of the full Twitter dat
 - linking to "in reply to" tweets
 
 
-== FAQ ==
+== Frequently Asked Questions ==
 
 = What if I don't want to use Social's comment display? =
 
@@ -127,6 +127,13 @@ https://gist.github.com/3470627
 Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012.
 
 == Changelog ==
+
+= 3.0.1 =
+
+* Set categories and post tags properly on posts created from tweets
+* Set GMT date explicitly for blog posts created from tweets (fixes time offset issue)
+* Make enabled/disabled accounts more explicit
+
 
 = 3.0 =
 

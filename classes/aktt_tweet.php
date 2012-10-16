@@ -470,7 +470,7 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->date()) + (get_option('gmt_offset') * 3600)),
+			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
@@ -546,13 +546,14 @@ class AKTT_Tweet {
 			'post_title' => $title_prefix.$this->title(),
 			'post_content' => $post_content,
 			'post_author' => $post_author,
-			'tax_input' => array(
-				'category' => array($post_category),
-				'post_tag' => array_map('trim', explode(',', $post_tags)),
-			),
+// see below
+// 			'tax_input' => array(
+// 				'category' => array($post_category),
+// 				'post_tag' => array_map('trim', explode(',', $post_tags)),
+// 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
-			'post_date' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
+			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
 			'guid' => $this->guid().'-post'
 		);
 		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
@@ -563,6 +564,11 @@ class AKTT_Tweet {
 			AKTT::log('WP_Error:: '.$this->blog_post_id->get_error_message());
 			return false;
 		}
+		
+		// have to set up taxonomies after the insert in case we are in a context without
+		// a 'current user' - see: http://core.trac.wordpress.org/ticket/19373
+		wp_set_object_terms($this->blog_post_id, intval($post_category), 'category');
+		wp_set_object_terms($this->blog_post_id, array_map('trim', explode(',', $post_tags)), 'post_tag');
 
 		set_post_format($this->blog_post_id, 'status');
 		

@@ -4,7 +4,7 @@ $name = 'aktt_v3_accounts['.$account->id.'][settings][%s]';
 
 ?>
 <div class="aktt-account">
-	<h3 style="background: url(<?php echo esc_url($account->social_acct->avatar()); ?>) left top no-repeat;"><?php echo esc_html($account->social_acct->name()); ?></h3>
+	<h3 style="background: url(<?php echo esc_url($account->social_acct->avatar()); ?>) left top no-repeat;"><?php echo esc_html($account->social_acct->name()); ?> <span class="aktt-account-disabled-notice"><?php _e('(disabled)', 'twitter-tools'); ?></span></h3>
 	<div class="settings">
 		<p>
 			<label for="<?php echo esc_attr(sprintf($name, 'enabled')); ?>">
