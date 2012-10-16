@@ -38,8 +38,7 @@ table.form-table h3 {
 	margin: 0;
 	padding: 0;
 }
-.aktt-account-enabled {
-	background: url(<?php echo esc_url(admin_url('images/yes.png')); ?>) right center no-repeat;
+.aktt-account-enabled.aktt-account-collapsed {
 	color: #333;
 	opacity: 1;
 }
@@ -49,6 +48,12 @@ table.form-table h3 {
 	line-height: 48px;
 	margin: 0;
 	padding: 0 0 0 58px;
+}
+.aktt-account-disabled-notice {
+	color: #999;
+}
+.aktt-account-enabled .aktt-account-disabled-notice {
+	display: none;
 }
 .aktt-none .aktt-account h3 {
 	cursor: default;
@@ -200,13 +205,11 @@ function akttSetState(elem) {
 	var $enabled = $account.find('input.enabled');
 	var $createPosts = $account.find('input.create-posts');
 // toggle enabled icon
-	if (!$settings.is(':visible')) {
-		if ($enabled.is(':checked')) {
-			$account.addClass('aktt-account-enabled');
-		}
-		else {
-			$account.addClass('dim');
-		}
+	if ($enabled.is(':checked')) {
+		$account.addClass('aktt-account-enabled');
+	}
+	else {
+		$account.removeClass('aktt-account-enabled');
 	}
 // toggle enabled/dimmed for enabled dependent fields
 	if ($enabled.is(':checked')) {
@@ -229,18 +232,10 @@ jQuery(function($) {
 		var $account = $(this);
 		akttSetState($account);
 		$account.find('h3').click(function() {
-			$account.removeClass('dim aktt-account-enabled').find('.settings').slideToggle(function() {
+			$account.find('.settings').slideToggle(function() {
 				akttSetState($account);
 			});
 		}).end().find('input[type="checkbox"].enabled, input[type="checkbox"].create-posts').change(function() {
-// 			if ($(this).filter('.create-posts').size()) {
-// 				if ($(this).is(':checked')) {
-// 					$account.find('.depends-on-create-posts').slideDown();
-// 				}
-// 				else {
-// 					$account.find('.depends-on-create-posts').slideUp();
-// 				}
-// 			}
 			akttSetState($account);
 		});
 	});
