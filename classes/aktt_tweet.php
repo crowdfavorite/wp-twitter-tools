@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * replaces substr_replace while being multibyte character (eg utf-8) aware
+ *
+ */
 	function mb_substr_replace($string, $replacement, $start, $length = null, $encoding = null)
 	{
 	  if (extension_loaded('mbstring') === true)
@@ -406,6 +410,7 @@ class AKTT_Tweet {
 // $log[] = 'replace len: '.strlen($entity['replace']);
 // $log[] = 'replace: '.htmlspecialchars($entity['replace']);
 // echo '<p>'.implode('<br>', $log).'</p>';
+			// use mb_ functions to support multibyte encodings
 			$str = mb_substr_replace($str, $entity['replace'], $start, ($end - $start));
 			$diff += mb_strlen($entity['replace']) - ($end - $start);
 		}
