@@ -294,7 +294,60 @@ class AKTT_Tweet {
 	function is_retweet() {
 		return (bool) (substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
 	}
-	
+
+	/**
+	 * Replace text within a portion of string of multi-byte characters
+	 *
+	 * Copy from http://www.php.net/manual/en/function.substr-replace.php#90146
+	 *
+	 * @param string $string
+	 * @param string $replacement
+	 * @param int $start
+	 * @param int $length
+	 * @param string $encoding
+	 * @return string
+	 */
+
+	function mb_substr_replace($string, $replacement, $start, $length = null, $encoding = null) {
+        if (extension_loaded('mbstring') === true)
+        {
+            $string_length = (is_null($encoding) === true) ? mb_strlen($string) : mb_strlen($string, $encoding);
+            
+            if ($start < 0)
+            {
+                $start = max(0, $string_length + $start);
+            }
+            
+            else if ($start > $string_length)
+            {
+                $start = $string_length;
+            }
+            
+            if ($length < 0)
+            {
+                $length = max(0, $string_length - $start + $length);
+            }
+            
+            else if ((is_null($length) === true) || ($length > $string_length))
+            {
+                $length = $string_length;
+            }
+            
+            if (($start + $length) > $string_length)
+            {
+                $length = $string_length - $start;
+            }
+            
+            if (is_null($encoding) === true)
+            {
+                return mb_substr($string, 0, $start) . $replacement . mb_substr($string, $start + $length, $string_length - $start - $length);
+            }
+            
+            return mb_substr($string, 0, $start, $encoding) . $replacement . mb_substr($string, $start + $length, $string_length - $start - $length, $encoding);
+        }
+        
+        return (is_null($length) === true) ? substr_replace($string, $replacement, $start) : substr_replace($string, $replacement, $start, $length);
+    }	
 	
 	/**
 	 * Look up whether this tweet came from a broadcast
@@ -363,8 +416,8 @@ class AKTT_Tweet {
 // $log[] = 'replace len: '.strlen($entity['replace']);
 // $log[] = 'replace: '.htmlspecialchars($entity['replace']);
 // echo '<p>'.implode('<br>', $log).'</p>';
-			$str = substr_replace($str, $entity['replace'], $start, ($end - $start));
-			$diff += strlen($entity['replace']) - ($end - $start);
+			$str = $this->mb_substr_replace($str, $entity['replace'], $start, ($end - $start));
+			$diff += mb_strlen($entity['replace']) - ($end - $start);
 		}
 		return $str;
 	}
