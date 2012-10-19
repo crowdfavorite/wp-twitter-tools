@@ -1,5 +1,48 @@
 <?php
 
+	function mb_substr_replace($string, $replacement, $start, $length = null, $encoding = null)
+	{
+	  if (extension_loaded('mbstring') === true)
+	    {
+	      $string_length = (is_null($encoding) === true) ? mb_strlen($string) : mb_strlen($string, $encoding);
+	      
+	      if ($start < 0)
+		{
+		  $start = max(0, $string_length + $start);
+		}
+	      
+	      else if ($start > $string_length)
+		{
+		  $start = $string_length;
+		}
+	      
+	      if ($length < 0)
+		{
+		  $length = max(0, $string_length - $start + $length);
+		}
+	      
+	      else if ((is_null($length) === true) || ($length > $string_length))
+		{
+		  $length = $string_length;
+		}
+	      
+	      if (($start + $length) > $string_length)
+		{
+		  $length = $string_length - $start;
+		}
+	      
+	      if (is_null($encoding) === true)
+		{
+		  return mb_substr($string, 0, $start) . $replacement . mb_substr($string, $start + $length, $string_length - $start - $length);
+		}
+	      
+	      return mb_substr($string, 0, $start, $encoding) . $replacement . mb_substr($string, $start + $length, $string_length - $start - $length, $encoding);
+	    }
+	  
+	  return (is_null($length) === true) ? substr_replace($string, $replacement, $start) : substr_replace($string, $replacement, $start, $length);
+	}
+
+
 class AKTT_Tweet {
 	var $post_id = null;
 	var $featured_image_id = null;
@@ -363,8 +406,8 @@ class AKTT_Tweet {
 // $log[] = 'replace len: '.strlen($entity['replace']);
 // $log[] = 'replace: '.htmlspecialchars($entity['replace']);
 // echo '<p>'.implode('<br>', $log).'</p>';
-			$str = substr_replace($str, $entity['replace'], $start, ($end - $start));
-			$diff += strlen($entity['replace']) - ($end - $start);
+			$str = mb_substr_replace($str, $entity['replace'], $start, ($end - $start));
+			$diff += mb_strlen($entity['replace']) - ($end - $start);
 		}
 		return $str;
 	}
