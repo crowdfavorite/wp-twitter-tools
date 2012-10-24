@@ -463,6 +463,15 @@ class AKTT_Tweet {
 	 * @return void
 	 */
 	function add() {
+		$gmt_time = self::twdate_to_time($this->date());
+		$gmt_date = date('Y-m-d H:i:s', $gmt_time);
+
+		// Not using get_option('gmt_offset') because it gets the offset for the
+		// current date/time which doesn't work for timezones with daylight savings time.
+		$datetime = new DateTime( $gmt_date );
+		$datetime->setTimezone(new DateTimeZone(get_option('timezone_string')));
+		$offset_in_secs = $datetime->getOffset();
+
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
@@ -470,7 +479,8 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
+			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
+			'post_date' => date('Y-m-d H:i:s', $gmt_time + $offset_in_secs),
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
