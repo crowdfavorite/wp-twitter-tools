@@ -575,7 +575,11 @@ class AKTT_Tweet {
 		wp_set_object_terms($this->blog_post_id, intval($post_category), 'category');
 		wp_set_object_terms($this->blog_post_id, array_map('trim', explode(',', $post_tags)), 'post_tag');
 
-		set_post_format($this->blog_post_id, 'status');
+		// hook in here and return false to not set the format to "status", 
+		// or return another format to use that format instead of status
+		if ($post_Format = apply_filters('aktt_tweet_create_blog_post_format', 'status', $data, $this)) {
+			set_post_format($this->blog_post_id, $post_Format);
+		}
 		
 		if (!empty($this->featured_image_id)) {
 			update_post_meta($this->blog_post_id, '_thumbnail_id', $this->featured_image_id);
