@@ -29,7 +29,7 @@ class AKTT {
 	static function add_thumbnail_support() {
 		$thumbnails = get_theme_support('post-thumbnails');
 		if (is_array($thumbnails)) {
-			add_theme_support('post-thumbnails', array_merge($thumbnails, array(self::$post_type)));
+			add_theme_support('post-thumbnails', array_merge($thumbnails[0], array(self::$post_type)));
 		}
 		else if (!$thumbnails) {
 			add_theme_support('post-thumbnails', array(self::$post_type));
