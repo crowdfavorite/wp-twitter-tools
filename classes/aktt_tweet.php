@@ -557,6 +557,11 @@ class AKTT_Tweet {
 			'guid' => $this->guid().'-post'
 		);
 		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
+		
+		// hook in here if you want to conditionally skip blog post creation
+		if (!apply_filters('aktt_tweet_create_blog_post', true, $data, $this)) {
+			return false;
+		}
 
 		$this->blog_post_id = wp_insert_post($data, true);
 		
