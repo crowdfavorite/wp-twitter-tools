@@ -1115,7 +1115,7 @@ jQuery(function($) {
 		return $tweet;
 	}
 	
-	static function substr_replace($str, $replace, $start, $length = null) {
+	static function substr_replace($string, $replacement, $start, $length = null, $encoding = null) {
 		// from http://www.php.net/manual/en/function.substr-replace.php#90146
 		// via https://github.com/ruanyf/wp-twitter-tools/commit/56d1a4497483b2b39f434fdfab4797d8574088e5
 		if (extension_loaded('mbstring') === true) {
@@ -1140,15 +1140,22 @@ jQuery(function($) {
 				return mb_substr($string, 0, $start) . $replacement 
 					. mb_substr($string, $start + $length, $string_length - $start - $length);
 			}
+			return mb_substr($string, 0, $start, $encoding) . $replacement 
+				. mb_substr($string, $start + $length, $string_length - $start - $length, $encoding);
 		}
 		else {
 			return (is_null($length) === true) ? substr_replace($string, $replacement, $start) : substr_replace($string, $replacement, $start, $length);
 		}
 	}
 
-	static function strlen($str) {
+	static function strlen($str, $encoding = null) {
 		if (function_exists('mb_strlen')) {
-			return mb_strlen($str);
+			if (is_null($encoding) === true) {
+				return mb_strlen($str);
+			}
+			else {
+				return mb_strlen($str, $encoding);
+			}
 		}
 		else {
 			return strlen($str);
