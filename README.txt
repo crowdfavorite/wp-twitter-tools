@@ -128,11 +128,21 @@ Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/ex
 
 == Changelog ==
 
+= 3.0.2 =
+
+* Add `aktt_tweet_create_blog_post` filter to allow other plugins/code to make programatic decisions about when to create blog posts from tweets
+* Add `aktt_tweet_create_blog_post_format` filter to allow post format to changed or omitted
+* Properly apply title prefix when creating blog posts
+* Address misc. multi-byte string issues
+* Fix GMT/local time issues and set time properly for tweets and posts
+* Properly enable featured image for tweet post type by merging with existing enabled post types
+
+
 = 3.0.1 =
 
 * Set categories and post tags properly on posts created from tweets
 * Set GMT date explicitly for blog posts created from tweets (fixes time offset issue)
-* Make enabled/disabled accounts more explicit
+* Make enabled/disabled accounts more explicit visually
 
 
 = 3.0 =
