@@ -1052,7 +1052,7 @@ jQuery(function($) {
 	}
 
 	static function profile_prefix($username, $prefix = '@') {
-		if (substr($username, 0, 1) != '#') {
+		if (AKTT::substr($username, 0, 1) != '#') {
 			$username = '@'.$username;
 		}
 		return $username;
@@ -1069,7 +1069,7 @@ jQuery(function($) {
 	}
 	
 	static function hashtag_prefix($hashtag, $prefix = '#') {
-		if (substr($hashtag, 0, 1) != '#') {
+		if (AKTT::substr($hashtag, 0, 1) != '#') {
 			$hashtag = '#'.$hashtag;
 		}
 		return $hashtag;
@@ -1113,6 +1113,33 @@ jQuery(function($) {
 			}
 		}
 		return $tweet;
+	}
+	
+	static function substr_replace($str, $replace, $start, $length) {
+		if (function_exists('mb_str_replace')) {
+			return mb_substr_replace($str, $replace, $start, $length);
+		}
+		else {
+			return substr_replace($str, $replace, $start, $length);
+		}
+	}
+
+	static function strlen($str) {
+		if (function_exists('mb_strlen')) {
+			return mb_strlen($str);
+		}
+		else {
+			return strlen($str);
+		}
+	}
+
+	static function substr($str, $start, $length) {
+		if (function_exists('mb_substr')) {
+			return mb_substr($str, $start, $length);
+		}
+		else {
+			return substr($str, $start, $length);
+		}
 	}
 
 }

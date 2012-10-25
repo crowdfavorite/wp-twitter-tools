@@ -73,8 +73,8 @@ class AKTT_Tweet {
 	 */
 	public function title() {
 		if (isset($this->data)) {
-			$title = trim(substr($this->data->text, 0, 50));
-			if (strlen($this->data->text) > 50) {
+			$title = trim(AKTT::substr($this->data->text, 0, 50));
+			if (AKTT::strlen($this->data->text) > 50) {
 				$title = $title.'...';
 			}
 		}
@@ -282,7 +282,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function is_reply() {
-		return (bool) (substr($this->content(), 0, 1) == '@' || !empty($this->data->in_reply_to_screen_name));
+		return (bool) (AKTT::substr($this->content(), 0, 1) == '@' || !empty($this->data->in_reply_to_screen_name));
 	}
 	
 
@@ -292,7 +292,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function is_retweet() {
-		return (bool) (substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
+		return (bool) (AKTT::substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
 	}
 	
 	
@@ -353,18 +353,18 @@ class AKTT_Tweet {
 // $log = array();
 // $log[] = 'diff: '.$diff;
 // $log[] = 'entity start: '.$entity['start'];
-// $log[] = 'entity start chars: '.substr($this->content(), $entity['start'], 3);
+// $log[] = 'entity start chars: '.AKTT::substr($this->content(), $entity['start'], 3);
 // $log[] = 'diff start: '.$start;
-// $log[] = 'diff start chars: '.substr($str, $start, 3);
+// $log[] = 'diff start chars: '.AKTT::substr($str, $start, 3);
 // $log[] = 'entity end: '.$entity['end'];
 // $log[] = 'diff end: '.$end;
-// $log[] = 'find len: '.strlen($entity['find']);
+// $log[] = 'find len: '.AKTT::strlen($entity['find']);
 // $log[] = 'find: '.htmlspecialchars($entity['find']);
-// $log[] = 'replace len: '.strlen($entity['replace']);
+// $log[] = 'replace len: '.AKTT::strlen($entity['replace']);
 // $log[] = 'replace: '.htmlspecialchars($entity['replace']);
 // echo '<p>'.implode('<br>', $log).'</p>';
-			$str = substr_replace($str, $entity['replace'], $start, ($end - $start));
-			$diff += strlen($entity['replace']) - ($end - $start);
+			$str = AKTT::substr_replace($str, $entity['replace'], $start, ($end - $start));
+			$diff += AKTT::strlen($entity['replace']) - ($end - $start);
 		}
 		return $str;
 	}
