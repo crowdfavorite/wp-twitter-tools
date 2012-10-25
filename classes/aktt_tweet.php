@@ -463,6 +463,7 @@ class AKTT_Tweet {
 	 * @return void
 	 */
 	function add() {
+		$gmt_time = self::twdate_to_time($this->date());
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
@@ -470,7 +471,8 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
+			'post_date' => date('Y-m-d H:i:s', AKTT::gmt_to_wp_time($gmt_time)),
+			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
@@ -541,6 +543,8 @@ class AKTT_Tweet {
 			$post_content .= "\n\n".wp_get_attachment_image($this->featured_image_id, $size);
 		}
 		
+		$gmt_time = self::twdate_to_time($this->meta['created_at']);
+		
 		// Build the post data
 		$data = array(
 			'post_title' => $title_prefix.$this->title(),
@@ -553,7 +557,8 @@ class AKTT_Tweet {
 // 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
-			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
+			'post_date' => date('Y-m-d H:i:s', AKTT::gmt_to_wp_time($gmt_time)),
+			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
 			'guid' => $this->guid().'-post'
 		);
 		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
