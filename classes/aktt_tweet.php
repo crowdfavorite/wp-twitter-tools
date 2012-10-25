@@ -73,8 +73,8 @@ class AKTT_Tweet {
 	 */
 	public function title() {
 		if (isset($this->data)) {
-			$title = trim(substr($this->data->text, 0, 50));
-			if (strlen($this->data->text) > 50) {
+			$title = trim(AKTT::substr($this->data->text, 0, 50));
+			if (AKTT::strlen($this->data->text) > 50) {
 				$title = $title.'...';
 			}
 		}
@@ -282,7 +282,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function is_reply() {
-		return (bool) (substr($this->content(), 0, 1) == '@' || !empty($this->data->in_reply_to_screen_name));
+		return (bool) (AKTT::substr($this->content(), 0, 1) == '@' || !empty($this->data->in_reply_to_screen_name));
 	}
 	
 
@@ -292,7 +292,7 @@ class AKTT_Tweet {
 	 * @return bool
 	 */
 	function is_retweet() {
-		return (bool) (substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
+		return (bool) (AKTT::substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
 	}
 	
 	
@@ -353,18 +353,18 @@ class AKTT_Tweet {
 // $log = array();
 // $log[] = 'diff: '.$diff;
 // $log[] = 'entity start: '.$entity['start'];
-// $log[] = 'entity start chars: '.substr($this->content(), $entity['start'], 3);
+// $log[] = 'entity start chars: '.AKTT::substr($this->content(), $entity['start'], 3);
 // $log[] = 'diff start: '.$start;
-// $log[] = 'diff start chars: '.substr($str, $start, 3);
+// $log[] = 'diff start chars: '.AKTT::substr($str, $start, 3);
 // $log[] = 'entity end: '.$entity['end'];
 // $log[] = 'diff end: '.$end;
-// $log[] = 'find len: '.strlen($entity['find']);
+// $log[] = 'find len: '.AKTT::strlen($entity['find']);
 // $log[] = 'find: '.htmlspecialchars($entity['find']);
-// $log[] = 'replace len: '.strlen($entity['replace']);
+// $log[] = 'replace len: '.AKTT::strlen($entity['replace']);
 // $log[] = 'replace: '.htmlspecialchars($entity['replace']);
 // echo '<p>'.implode('<br>', $log).'</p>';
-			$str = substr_replace($str, $entity['replace'], $start, ($end - $start));
-			$diff += strlen($entity['replace']) - ($end - $start);
+			$str = AKTT::substr_replace($str, $entity['replace'], $start, ($end - $start));
+			$diff += AKTT::strlen($entity['replace']) - ($end - $start);
 		}
 		return $str;
 	}
@@ -463,6 +463,7 @@ class AKTT_Tweet {
 	 * @return void
 	 */
 	function add() {
+		$gmt_time = self::twdate_to_time($this->date());
 		// Build the post data
 		$data = apply_filters('aktt_tweet_add', array(
 			'post_title' => $this->title(),
@@ -470,7 +471,8 @@ class AKTT_Tweet {
 			'post_content' => $this->content(),
 			'post_status' => 'publish',
 			'post_type' => AKTT::$post_type,
-			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->date())),
+			'post_date' => date('Y-m-d H:i:s', AKTT::gmt_to_wp_time($gmt_time)),
+			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
 			'guid' => $this->guid(),
 //			'tax_input' => $tax_input, // see below...
 		));
@@ -532,7 +534,7 @@ class AKTT_Tweet {
 		extract($args);
 		
 		// Add a space if we have a prefix
-		$title_prefix = empty($title_prefix) ? '' : $title_prefix.' ';
+		$title_prefix = empty($title_prefix) ? '' : trim($title_prefix).' ';
 
 		$post_content = $this->link_entities(false);
 		// Append image to post if there is one, can't set it as a featured image until after save
@@ -540,6 +542,8 @@ class AKTT_Tweet {
 			$size = apply_filters('aktt_featured_image_size', 'medium');
 			$post_content .= "\n\n".wp_get_attachment_image($this->featured_image_id, $size);
 		}
+		
+		$gmt_time = self::twdate_to_time($this->date());
 		
 		// Build the post data
 		$data = array(
@@ -553,10 +557,16 @@ class AKTT_Tweet {
 // 			),
 			'post_status' => 'publish',
 			'post_type' => 'post',
-			'post_date_gmt' => date('Y-m-d H:i:s', self::twdate_to_time($this->meta['created_at'])),
+			'post_date' => date('Y-m-d H:i:s', AKTT::gmt_to_wp_time($gmt_time)),
+			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
 			'guid' => $this->guid().'-post'
 		);
 		$data = apply_filters('aktt_tweet_create_blog_post_data', $data);
+		
+		// hook in here if you want to conditionally skip blog post creation
+		if (!apply_filters('aktt_tweet_create_blog_post', true, $data, $this)) {
+			return false;
+		}
 
 		$this->blog_post_id = wp_insert_post($data, true);
 		
@@ -570,7 +580,11 @@ class AKTT_Tweet {
 		wp_set_object_terms($this->blog_post_id, intval($post_category), 'category');
 		wp_set_object_terms($this->blog_post_id, array_map('trim', explode(',', $post_tags)), 'post_tag');
 
-		set_post_format($this->blog_post_id, 'status');
+		// hook in here and return false to not set the format to "status", 
+		// or return another format to use that format instead of status
+		if ($post_format = apply_filters('aktt_tweet_create_blog_post_format', 'status', $data, $this)) {
+			set_post_format($this->blog_post_id, $post_format);
+		}
 		
 		if (!empty($this->featured_image_id)) {
 			update_post_meta($this->blog_post_id, '_thumbnail_id', $this->featured_image_id);

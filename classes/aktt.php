@@ -29,7 +29,7 @@ class AKTT {
 	static function add_thumbnail_support() {
 		$thumbnails = get_theme_support('post-thumbnails');
 		if (is_array($thumbnails)) {
-			add_theme_support('post-thumbnails', array_merge($thumbnails, array(self::$post_type)));
+			add_theme_support('post-thumbnails', array_merge($thumbnails[0], array(self::$post_type)));
 		}
 		else if (!$thumbnails) {
 			add_theme_support('post-thumbnails', array(self::$post_type));
@@ -1052,7 +1052,7 @@ jQuery(function($) {
 	}
 
 	static function profile_prefix($username, $prefix = '@') {
-		if (substr($username, 0, 1) != '#') {
+		if (AKTT::substr($username, 0, 1) != '#') {
 			$username = '@'.$username;
 		}
 		return $username;
@@ -1069,7 +1069,7 @@ jQuery(function($) {
 	}
 	
 	static function hashtag_prefix($hashtag, $prefix = '#') {
-		if (substr($hashtag, 0, 1) != '#') {
+		if (AKTT::substr($hashtag, 0, 1) != '#') {
 			$hashtag = '#'.$hashtag;
 		}
 		return $hashtag;
@@ -1113,6 +1113,79 @@ jQuery(function($) {
 			}
 		}
 		return $tweet;
+	}
+	
+	static function gmt_to_wp_time($gmt_time) {
+		$timezone_string = get_option('timezone_string');
+		if (!empty($timezone_string)) {
+			// Not using get_option('gmt_offset') because it gets the offset for the
+			// current date/time which doesn't work for timezones with daylight savings time.
+			$gmt_date = date('Y-m-d H:i:s', $gmt_time);
+			$datetime = new DateTime($gmt_date);
+			$datetime->setTimezone(new DateTimeZone(get_option('timezone_string')));
+			$offset_in_secs = $datetime->getOffset();
+			
+			return $gmt_time + $offset_in_secs;
+		}
+		else {
+			return $gmt_time + (get_option('gmt_offset') * 3600);
+		}
+	}
+
+	static function substr_replace($string, $replacement, $start, $length = null, $encoding = null) {
+		// from http://www.php.net/manual/en/function.substr-replace.php#90146
+		// via https://github.com/ruanyf/wp-twitter-tools/commit/56d1a4497483b2b39f434fdfab4797d8574088e5
+		if (extension_loaded('mbstring') === true) {
+			$string_length = (is_null($encoding) === true) ? mb_strlen($string) : mb_strlen($string, $encoding);
+			
+			if ($start < 0) {
+				$start = max(0, $string_length + $start);
+			}
+			else if ($start > $string_length) {
+				$start = $string_length;
+			}
+			if ($length < 0) {
+				$length = max(0, $string_length - $start + $length);
+			}
+			else if ((is_null($length) === true) || ($length > $string_length)) {
+				$length = $string_length;
+			}
+			if (($start + $length) > $string_length) {
+				$length = $string_length - $start;
+			}
+			if (is_null($encoding) === true) {
+				return mb_substr($string, 0, $start) . $replacement 
+					. mb_substr($string, $start + $length, $string_length - $start - $length);
+			}
+			return mb_substr($string, 0, $start, $encoding) . $replacement 
+				. mb_substr($string, $start + $length, $string_length - $start - $length, $encoding);
+		}
+		else {
+			return (is_null($length) === true) ? substr_replace($string, $replacement, $start) : substr_replace($string, $replacement, $start, $length);
+		}
+	}
+
+	static function strlen($str, $encoding = null) {
+		if (function_exists('mb_strlen')) {
+			if (is_null($encoding) === true) {
+				return mb_strlen($str);
+			}
+			else {
+				return mb_strlen($str, $encoding);
+			}
+		}
+		else {
+			return strlen($str);
+		}
+	}
+
+	static function substr($str, $start, $length) {
+		if (function_exists('mb_substr')) {
+			return mb_substr($str, $start, $length);
+		}
+		else {
+			return substr($str, $start, $length);
+		}
 	}
 
 }
