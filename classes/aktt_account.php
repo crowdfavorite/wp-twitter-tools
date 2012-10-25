@@ -166,7 +166,7 @@ class AKTT_Account {
 			'post_author' => $this->option('post_author'),
 			'post_category' => $this->option('post_category'),
 			'post_tags' => $this->option('post_tags'),
-			'title_prefix' => $this->option('blog_post_title_prefix'),
+			'title_prefix' => $this->option('blog_post_title'),
 		);
 		
 // Save new tweets

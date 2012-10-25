@@ -532,7 +532,7 @@ class AKTT_Tweet {
 		extract($args);
 		
 		// Add a space if we have a prefix
-		$title_prefix = empty($title_prefix) ? '' : $title_prefix.' ';
+		$title_prefix = empty($title_prefix) ? '' : trim($title_prefix).' ';
 
 		$post_content = $this->link_entities(false);
 		// Append image to post if there is one, can't set it as a featured image until after save
