@@ -1116,15 +1116,20 @@ jQuery(function($) {
 	}
 	
 	static function gmt_to_wp_time($gmt_time) {
-		$gmt_date = date('Y-m-d H:i:s', $gmt_time);
-		
-		// Not using get_option('gmt_offset') because it gets the offset for the
-		// current date/time which doesn't work for timezones with daylight savings time.
-		$datetime = new DateTime($gmt_date);
-		$datetime->setTimezone(new DateTimeZone(get_option('timezone_string')));
-		$offset_in_secs = $datetime->getOffset();
-		
-		return $gmt_time + $offset_in_secs;
+		$timezone_string = get_option('timezone_string');
+		if (!empty($timezone_string)) {
+			// Not using get_option('gmt_offset') because it gets the offset for the
+			// current date/time which doesn't work for timezones with daylight savings time.
+			$gmt_date = date('Y-m-d H:i:s', $gmt_time);
+			$datetime = new DateTime($gmt_date);
+			$datetime->setTimezone(new DateTimeZone(get_option('timezone_string')));
+			$offset_in_secs = $datetime->getOffset();
+			
+			return $gmt_time + $offset_in_secs;
+		}
+		else {
+			return $gmt_time + (get_option('gmt_offset') * 3600);
+		}
 	}
 
 }

@@ -543,7 +543,7 @@ class AKTT_Tweet {
 			$post_content .= "\n\n".wp_get_attachment_image($this->featured_image_id, $size);
 		}
 		
-		$gmt_time = self::twdate_to_time($this->meta['created_at']);
+		$gmt_time = self::twdate_to_time($this->date());
 		
 		// Build the post data
 		$data = array(
