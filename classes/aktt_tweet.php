@@ -582,8 +582,8 @@ class AKTT_Tweet {
 
 		// hook in here and return false to not set the format to "status", 
 		// or return another format to use that format instead of status
-		if ($post_Format = apply_filters('aktt_tweet_create_blog_post_format', 'status', $data, $this)) {
-			set_post_format($this->blog_post_id, $post_Format);
+		if ($post_format = apply_filters('aktt_tweet_create_blog_post_format', 'status', $data, $this)) {
+			set_post_format($this->blog_post_id, $post_format);
 		}
 		
 		if (!empty($this->featured_image_id)) {
