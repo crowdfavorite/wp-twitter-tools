@@ -152,3 +152,8 @@ function aktt_sideload_image($file, $post_id, $desc = null) {
 	}
 	return media_handle_sideload( $file_array, $post_id, $desc );
 }
+
+function aktt_latest_tweet() {
+	_deprecated_function(__FUNCTION__, '3.0', 'aktt_shortcode_tweets()');
+	echo do_shortcode('[aktt_tweets count="1"]');
+}
