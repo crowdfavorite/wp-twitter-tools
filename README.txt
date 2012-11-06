@@ -113,6 +113,14 @@ Twitter Tools starts archiving from the time you enable it. It does not try to d
 
 https://gist.github.com/3470627
 
+= What happened to the digest features? =
+
+The digest features never worked reliably and were removed in version 3.0. Another developer is welcome to make a plugin that uses the underlying features of Twitter Tools to implement digest features.
+
+= What happened to the default hashtags feature? =
+
+These are no longer needed in 3.0+ since the default broadcast message is now fully customizable in the Social settings. Add your hashtags to your default broadcast message template.
+
 == Screenshots ==
 
 1. Show your tweets on your site (optional).
