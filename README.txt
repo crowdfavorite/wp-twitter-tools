@@ -21,6 +21,10 @@ Twitter Tools integrates with Twitter by giving you the following functionality:
 
 Twitter Tools leverages Social's connection to Twitter so that you don't have to create an app and copy keys around. It supports multiple accounts (must be authorized as "global" accounts in Social) with settings on a per-account basis.
 
+**Support Level:** Product Support (we want to fix bugs and make the product great, but do not provide individual support).
+
+**Developers:** [Fork and contribute on GitHub](https://github.com/crowdfavorite/wp-twitter-tools
+).
 
 == Installation ==
 
@@ -113,6 +117,18 @@ Twitter Tools starts archiving from the time you enable it. It does not try to d
 
 https://gist.github.com/3470627
 
+= What happened to the digest features? =
+
+The digest features never worked reliably and were removed in version 3.0. Another developer is welcome to make a plugin that uses the underlying features of Twitter Tools to implement digest features.
+
+= What happened to the default hashtags feature? =
+
+These are no longer needed in 3.0+ since the default broadcast message is now fully customizable in the Social settings. Add your hashtags to your default broadcast message template.
+
+= How do I use a URL-shortener like bit.ly? =
+
+Since Twitter Tools no longer does broadcasting, this is really a [question for Social](http://wordpress.org/extend/plugins/social/faq/). As noted in that FAQ, Social uses the built-in "short URL" feature of WordPress that supports any number of services via their plugins.
+
 == Screenshots ==
 
 1. Show your tweets on your site (optional).
@@ -124,11 +140,16 @@ https://gist.github.com/3470627
 
 == Upgrade Notice ==
 
-Version 3.0.3 is a recommended bug fix release.
+Version 3.0.4 brings support for Twitter API v1.1.
 
 Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012. Please see the <a href="http://alexking.org/blog/2012/10/12/twitter-tools-3-0-faq">FAQ</a> for more details.
 
 == Changelog ==
+
+= 3.0.4 =
+
+* Support for Twitter API v1.1.
+
 
 = 3.0.3 =
 

@@ -125,7 +125,7 @@ class AKTT_Account {
 	
 	function download_tweets() {
 		// Use Social to download tweets for this account
-		$response = $this->service->request($this->social_acct, 'statuses/user_timeline', array(
+		$response = $this->service->request($this->social_acct, '1.1/statuses/user_timeline', array(
 			'count' => apply_filters('aktt_account_api_download_count', 20), // default to twitter's default 
 			'include_entities' => 1, // include explicit hashtags and mentions
 			'include_rts' => 1, // include retweets

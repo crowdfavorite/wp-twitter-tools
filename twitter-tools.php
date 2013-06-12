@@ -3,12 +3,12 @@
 Plugin Name: Twitter Tools
 Plugin URI: http://crowdfavorite.com/wordpress/plugins/twitter-tools/
 Description: An integration between your WordPress site and Twitter. Create posts from your tweets. Show your tweets in your sidebar. Relies on <a href="http://wordpress.org/extend/plugins/social/">Social</a>.
-Version: 3.0.3
+Version: 3.0.4
 Author: Crowd Favorite
 Author URI: http://crowdfavorite.com
 */
 
-// Copyright (c) 2007-2012 Crowd Favorite, Ltd. All rights reserved.
+// Copyright (c) 2007-2013 Crowd Favorite, Ltd. All rights reserved.
 //
 // Released under the GPL license
 // http://www.opensource.org/licenses/gpl-license.php
@@ -151,4 +151,9 @@ function aktt_sideload_image($file, $post_id, $desc = null) {
 		include(ABSPATH.'wp-admin/includes/image.php');
 	}
 	return media_handle_sideload( $file_array, $post_id, $desc );
+}
+
+function aktt_latest_tweet() {
+	_deprecated_function(__FUNCTION__, '3.0', 'aktt_shortcode_tweets()');
+	echo do_shortcode('[aktt_tweets count="1"]');
 }
