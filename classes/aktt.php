@@ -1098,7 +1098,7 @@ jQuery(function($) {
 			}
 			$response = Social::instance()->service('twitter')->request(
 				$account->social_acct,
-				'statuses/show/'.urlencode($t->id).'.json',
+				'1.1/statuses/show/'.urlencode($t->id).'.json',
 					array(
 					'include_entities' => 1, // include explicit hashtags and mentions
 					'include_rts' => 1, // include retweets

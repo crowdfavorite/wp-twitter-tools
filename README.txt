@@ -140,11 +140,16 @@ Since Twitter Tools no longer does broadcasting, this is really a [question for 
 
 == Upgrade Notice ==
 
-Version 3.0.3 is a recommended bug fix release.
+Version 3.0.4 brings support for Twitter API v1.1.
 
 Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012. Please see the <a href="http://alexking.org/blog/2012/10/12/twitter-tools-3-0-faq">FAQ</a> for more details.
 
 == Changelog ==
+
+= 3.0.4 =
+
+* Support for Twitter API v1.1.
+
 
 = 3.0.3 =
 
