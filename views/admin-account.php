@@ -52,6 +52,12 @@ wp_dropdown_categories(array(
 				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" value="<?php echo esc_attr($account->option('post_tags')); ?>" />  <span class="help"><?php _e('(comma separated)', 'twitter-tools'); ?></span>
 			</p>
 			<p>
+				<label class="right" for="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>">
+					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>" value="1" <?php checked('1', $account->option('post_as_draft')); ?> />
+					<?php _e('Set blog posts as draft', 'twitter-tools'); ?>
+				</label>
+			</p>
+			<p>
 				<label class="right" for="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>">
 					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" id="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>" value="1" <?php checked('1', $account->option('exclude_reply_tweets')); ?> />
 					<?php _e('Don\'t create posts for reply tweets', 'twitter-tools'); ?>

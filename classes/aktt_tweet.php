@@ -555,7 +555,7 @@ class AKTT_Tweet {
 // 				'category' => array($post_category),
 // 				'post_tag' => array_map('trim', explode(',', $post_tags)),
 // 			),
-			'post_status' => 'publish',
+			'post_status' => $post_status,
 			'post_type' => 'post',
 			'post_date' => date('Y-m-d H:i:s', AKTT::gmt_to_wp_time($gmt_time)),
 			'post_date_gmt' => date('Y-m-d H:i:s', $gmt_time),
