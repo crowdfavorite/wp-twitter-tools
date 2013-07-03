@@ -48,14 +48,23 @@ wp_dropdown_categories(array(
 ?>
 			</p>
 			<p>
-				<label class="left" for="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>"><?php _e('Tags', 'twitter-tools'); ?></label>
-				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" value="<?php echo esc_attr($account->option('post_tags')); ?>" />  <span class="help"><?php _e('(comma separated)', 'twitter-tools'); ?></span>
+				<label class="left" for="<?php echo esc_attr(sprintf($name, 'post_status')); ?>"><?php _e('Status', 'twitter-tools'); ?></label>
+				<select name="<?php echo esc_attr(sprintf($name, 'post_status')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_status')); ?>">
+<?php
+$post_statuses = get_post_stati(array('show_in_admin_status_list' => true), 'objects');
+foreach ($post_statuses as $post_status_key => $post_status) {
+	$is_selected = '';
+	if ($account->option('post_status') === $post_status->name) {
+		$is_selected = ' selected="selected"';
+	}
+	echo '<option class="level-0" value="', $post_status->name, '"', $is_selected,'>', $post_status->label,'</option>';
+}
+?>
+				</select>
 			</p>
 			<p>
-				<label class="right" for="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>">
-					<input type="checkbox" name="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_as_draft')); ?>" value="1" <?php checked('1', $account->option('post_as_draft')); ?> />
-					<?php _e('Set blog posts as draft', 'twitter-tools'); ?>
-				</label>
+				<label class="left" for="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>"><?php _e('Tags', 'twitter-tools'); ?></label>
+				<input type="text" class="type-ahead" data-tax="post_tag" name="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" id="<?php echo esc_attr(sprintf($name, 'post_tags')); ?>" value="<?php echo esc_attr($account->option('post_tags')); ?>" />  <span class="help"><?php _e('(comma separated)', 'twitter-tools'); ?></span>
 			</p>
 			<p>
 				<label class="right" for="<?php echo esc_attr(sprintf($name, 'exclude_reply_tweets')); ?>">

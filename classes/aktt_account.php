@@ -37,17 +37,17 @@ class AKTT_Account {
 				'value' => 0,
 				'type' 	=> 'is_cat',
 			),
+			'post_status' => array( // Set blog post status
+				'label' => __('Post Status', 'twitter-tools'),
+				'label_first' => true,
+				'value' => 'publish',
+				'type' 	=> 'str',
+			),
 			'post_tags' => array( // tags to add to posts created from this acct
 				'label' => __('Post Tags', 'twitter-tools'),
 				'label_first' => true,
 				'value' => '',
 				'type' 	=> 'tags',
-			),
-			'post_as_draft' => array( // Set blog post as draft
-				'label' => __('Set blog posts as draft', 'twitter-tools'),
-				'label_first' => false,
-				'value' => 0,
-				'type' 	=> 'int',
 			),
 			'exclude_reply_tweets' => array( // Exclude tweets that are a reply from creating their own blog posts?
 				'label' => __('Exclude reply tweets from post creation', 'twitter-tools'),
@@ -167,18 +167,12 @@ class AKTT_Account {
 			AND post_type = '".AKTT::$post_type."'
 		");
 		
-		// Check for draft post setting
-		$post_status = 'publish';
-		if ($this->option('post_as_draft')) {
-			$post_status = 'draft';
-		}
-
 		// Set the args for any blog posts created
 		$post_tweet_args = array(
 			'post_author' => $this->option('post_author'),
 			'post_category' => $this->option('post_category'),
 			'post_tags' => $this->option('post_tags'),
-			'post_status' => $post_status,
+			'post_status' => $this->option('post_status'),
 			'title_prefix' => $this->option('blog_post_title'),
 		);
 		
