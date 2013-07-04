@@ -53,11 +53,7 @@ wp_dropdown_categories(array(
 <?php
 $post_statuses = get_post_stati(array('show_in_admin_status_list' => true), 'objects');
 foreach ($post_statuses as $post_status_key => $post_status) {
-	$is_selected = '';
-	if ($account->option('post_status') === $post_status->name) {
-		$is_selected = ' selected="selected"';
-	}
-	echo '<option class="level-0" value="', $post_status->name, '"', $is_selected,'>', $post_status->label,'</option>';
+	echo '<option class="level-0" value="', $post_status->name, '"', selected($account->option('post_status'), $post_status->name, false),'>', $post_status->label,'</option>';
 }
 ?>
 				</select>
