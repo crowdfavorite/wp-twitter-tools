@@ -2,7 +2,7 @@
 
 class AKTT {
 	// settings: aktt_v3_settings
-	static $ver = '3.0.1';
+	static $ver = '3.1';
 	static $enabled = false;
 	static $prefix = 'aktt_';
 	static $post_type = 'aktt_tweet';
@@ -77,7 +77,7 @@ class AKTT {
 		add_action('admin_enqueue_scripts', array('AKTT', 'admin_enqueue_scripts'));
 		
 		// Cron Hooks
-		add_action('social_cron_15', array('AKTT', 'import_tweets'));
+		add_action('socialcron15', array('AKTT', 'import_tweets'));
 		add_action('aktt_backfill_tweets', array('AKTT', 'backfill_tweets'));
 		
 		// Set logging to admin screen settings

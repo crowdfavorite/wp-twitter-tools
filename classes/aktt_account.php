@@ -37,6 +37,12 @@ class AKTT_Account {
 				'value' => 0,
 				'type' 	=> 'is_cat',
 			),
+			'post_status' => array( // Set blog post status
+				'label' => __('Post Status', 'twitter-tools'),
+				'label_first' => true,
+				'value' => 'publish',
+				'type' 	=> 'str',
+			),
 			'post_tags' => array( // tags to add to posts created from this acct
 				'label' => __('Post Tags', 'twitter-tools'),
 				'label_first' => true,
@@ -166,6 +172,7 @@ class AKTT_Account {
 			'post_author' => $this->option('post_author'),
 			'post_category' => $this->option('post_category'),
 			'post_tags' => $this->option('post_tags'),
+			'post_status' => $this->option('post_status'),
 			'title_prefix' => $this->option('blog_post_title'),
 		);
 		
