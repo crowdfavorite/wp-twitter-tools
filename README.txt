@@ -3,7 +3,7 @@ Contributors: alexkingorg, crowdfavorite
 Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, shortcode, social
 Requires at least: 3.8
 Tested up to: 3.8
-Stable tag: 3.0.5
+Stable tag: 3.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
