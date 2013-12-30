@@ -90,6 +90,9 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function content() {
+		if ($this->is_native_retweet()) {
+			return $this->data->retweeted_status->text;
+		}
 		if (isset($this->data) && isset($this->data->text)) {
 			return $this->data->text;
 		}
@@ -141,7 +144,12 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function hashtags() {
-		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->hashtags : array());
+		if ($this->is_native_retweet()) {
+			return (isset($this->data->retweeted_status->entities) ? $this->data->retweeted_status->entities->hashtags : array());
+		}
+		else {
+			return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->hashtags : array());
+		}
 	}
 	
 	/**
@@ -150,7 +158,12 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function mentions() {
-		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->user_mentions : array());
+		if ($this->is_native_retweet()) {
+			return (isset($this->data->retweeted_status->entities) ? $this->data->retweeted_status->entities->user_mentions : array());
+		}
+		else {
+			return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->user_mentions : array());
+		}
 	}
 	
 	/**
@@ -159,7 +172,12 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function urls() {
-		return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->urls : array());
+		if ($this->is_native_retweet()) {
+			return (isset($this->data->retweeted_status->entities) ? $this->data->retweeted_status->entities->urls : array());
+		}
+		else {
+			return (isset($this->data) && isset($this->data->entities) ? $this->data->entities->urls : array());
+		}
 	}
 	
 	/**
@@ -287,12 +305,22 @@ class AKTT_Tweet {
 	
 
 	/**
-	 * Is this a retweet?
+	 * Is this a native retweet?
+	 *
+	 * @return bool
+	 */
+	function is_native_retweet() {
+		return (bool) (isset($this->data) && !empty($this->data->retweeted_status));
+	}
+
+
+	/**
+	 * Is this a retweet? (This includes both native and non-native retweets.)
 	 *
 	 * @return bool
 	 */
 	function is_retweet() {
-		return (bool) (AKTT::substr($this->content(), 0, 2) == 'RT' || !empty($this->data->retweeted_status));
+		return (bool) (AKTT::substr($this->content(), 0, 2) == 'RT' || $this->is_native_retweet());
 	}
 	
 	
@@ -366,6 +394,12 @@ class AKTT_Tweet {
 			$str = AKTT::substr_replace($str, $entity['replace'], $start, ($end - $start));
 			$diff += AKTT::strlen($entity['replace']) - ($end - $start);
 		}
+
+		if ($this->is_native_retweet()) {
+			$orig_screen_name = $this->data->retweeted_status->user->screen_name;
+			$str = 'RT '.AKTT::profile_link($orig_screen_name).': '.$str;
+		}
+
 		return $str;
 	}
 	
