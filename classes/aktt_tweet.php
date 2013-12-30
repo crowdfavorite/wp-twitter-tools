@@ -340,19 +340,16 @@ class AKTT_Tweet {
 		return $was_broadcast;
 	}
 	
-	function link_entities($defer_to_anywhere = true) {
+	function link_entities($deprecated = true) {
 		$entities = array();
 // mentions
-		$anywhere = Social::option('twitter_anywhere_api_key');
-		if (!$defer_to_anywhere || empty($anywhere) || is_feed()) {
-			foreach ($this->mentions() as $entity) {
-				$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
-					'find' => $entity->screen_name,
-					'replace' => AKTT::profile_link($entity->screen_name),
-					'start' => $entity->indices[0],
-					'end' => $entity->indices[1],
-				);
-			}
+		foreach ($this->mentions() as $entity) {
+			$entities['start_'.str_pad($entity->indices[0], 5, '0', STR_PAD_LEFT)] = array(
+				'find' => $entity->screen_name,
+				'replace' => AKTT::profile_link($entity->screen_name),
+				'start' => $entity->indices[0],
+				'end' => $entity->indices[1],
+			);
 		}
 // hashtags
 		foreach ($this->hashtags() as $entity) {

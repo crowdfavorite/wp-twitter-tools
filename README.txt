@@ -150,9 +150,9 @@ Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/ex
 
 * (new) Requires Social v2.10
 * (new) Setting for post status when creating blog posts from tweets (thanks <a href="https://github.com/crowdfavorite/wp-twitter-tools/pull/22">ShawnDrew</a>)
-* (fix) Handle native RTs better (thanks <a href="https://github.com/crowdfavorite/wp-twitter-tools/issues/19">trustin</a>)
+* (change) Twitter has ended @anywhere so go ahead and link usernames all the time
 * (fix) Support for Social v2.10's CRON actions - tweets automatically download again
-
+* (fix) Handle native RTs better (thanks <a href="https://github.com/crowdfavorite/wp-twitter-tools/issues/19">trustin</a>)
 
 = 3.0.4 =
 
