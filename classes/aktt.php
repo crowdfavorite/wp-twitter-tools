@@ -2,7 +2,7 @@
 
 class AKTT {
 	// settings: aktt_v3_settings
-	static $ver = '3.0.5';
+	static $ver = '3.1';
 	static $enabled = false;
 	static $prefix = 'aktt_';
 	static $post_type = 'aktt_tweet';
