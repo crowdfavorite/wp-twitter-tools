@@ -1,9 +1,9 @@
 === Twitter Tools ===
 Contributors: alexkingorg, crowdfavorite
 Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, shortcode, social
-Requires at least: 3.4
-Tested up to: 3.5.1
-Stable tag: 3.0.4
+Requires at least: 3.8
+Tested up to: 3.8
+Stable tag: 3.0.5
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -140,11 +140,17 @@ Since Twitter Tools no longer does broadcasting, this is really a [question for 
 
 == Upgrade Notice ==
 
-Version 3.0.4 brings support for Twitter API v1.1.
+Version 3.0.5 brings support for Social 2.10's CRON action names and requires Social 2.10.
 
 Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012. Please see the <a href="http://alexking.org/blog/2012/10/12/twitter-tools-3-0-faq">FAQ</a> for more details.
 
 == Changelog ==
+
+= 3.0.5 =
+
+* (new) Requires Social v2.10
+* (fix) Support for Social v2.10's CRON actions - tweets automatically download again
+
 
 = 3.0.4 =
 
