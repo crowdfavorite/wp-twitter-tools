@@ -140,7 +140,7 @@ Since Twitter Tools no longer does broadcasting, this is really a [question for 
 
 == Upgrade Notice ==
 
-Version 3.0.5 brings support for Social 2.10's CRON action names and requires Social 2.10 and WordPress 3.8. It also adds a setting for the publish/draft status of blog posts created from tweets. Now you can set your blog posts to be created as drafts, then publish only the ones you choose to.
+Version 3.0.5 brings support for Social 2.10's CRON action names and requires Social 2.10 and WordPress 3.8. It also adds a setting for the publish/draft status of blog posts created from tweets. Now you can set your blog posts to be created as drafts, then publish only the ones you choose to. We've also improved native RT support.
 
 Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/extend/plugins/social/">Social</a> to make connecting your Twitter account easy. It is compatibile with the latest Twitter API changes as of October 11, 2012. Please see the <a href="http://alexking.org/blog/2012/10/12/twitter-tools-3-0-faq">FAQ</a> for more details.
 
@@ -150,6 +150,7 @@ Version 3.0 is a complete rewrite that utilizes <a href="http://wordpress.org/ex
 
 * (new) Requires Social v2.10
 * (new) Setting for post status when creating blog posts from tweets (thanks <a href="https://github.com/crowdfavorite/wp-twitter-tools/pull/22">ShawnDrew</a>)
+* (fix) Handle native RTs better (thanks <a href="https://github.com/crowdfavorite/wp-twitter-tools/issues/19">trustin</a>)
 * (fix) Support for Social v2.10's CRON actions - tweets automatically download again
 
 
