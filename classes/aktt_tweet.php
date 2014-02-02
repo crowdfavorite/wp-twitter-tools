@@ -186,7 +186,7 @@ class AKTT_Tweet {
 	 * @return string
 	 */
 	public function status_url() {
-		if ($username = $this->username() && $id = $this->id()) {
+		if (($username = $this->username()) && ($id = $this->id())) {
 			return AKTT::status_url($username, $id);
 		}
 		return null;
