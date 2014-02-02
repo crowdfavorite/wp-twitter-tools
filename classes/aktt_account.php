@@ -129,13 +129,23 @@ class AKTT_Account {
 	}
 	
 	
-	function download_tweets() {
-		// Use Social to download tweets for this account
-		$response = $this->service->request($this->social_acct, '1.1/statuses/user_timeline', array(
-			'count' => apply_filters('aktt_account_api_download_count', 20), // default to twitter's default 
+	function download_tweets($max_id = false, $count = false) {
+		if (false === $count) {
+			$count = apply_filters('aktt_account_api_download_count', 20);
+		}
+
+		$args = array(
+			'count' => $count, // default to twitter's default 
 			'include_entities' => 1, // include explicit hashtags and mentions
 			'include_rts' => 1, // include retweets
-		));
+		);
+
+		if (false !== $max_id ) {
+			$args['max_id'] = $max_id;
+		}
+
+		// Use Social to download tweets for this account
+		$response = $this->service->request($this->social_acct, '1.1/statuses/user_timeline', $args);
 		if ($response !== false) {
 			$content = $response->body();
 			if ($content->result == 'success') {
