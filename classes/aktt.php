@@ -74,6 +74,7 @@ class AKTT {
 		add_action('admin_init', array('AKTT', 'admin_controller'), 1);
 		add_action('admin_menu', array('AKTT', 'admin_menu'));
 		add_filter('plugin_action_links', array('AKTT', 'plugin_action_links'), 10, 2);
+		add_filter('post_row_actions', array('AKTT', 'post_row_actions'), 10, 2);
 		add_action('admin_enqueue_scripts', array('AKTT', 'admin_enqueue_scripts'));
 		
 		// Cron Hooks
@@ -414,6 +415,20 @@ class AKTT {
 		return $posts;
 	}
 	
+	/**
+	 * Appends a "View on Twitter.com" link to post listing quick links
+	 *
+	 * @param array $actions
+	 * @param object $post Post object
+	 * @return array
+	 */
+	function post_row_actions($actions, $post) {
+		if (isset($post->tweet)) {
+			$actions['view-on-twitter'] = '<a href="' . esc_url($post->tweet->status_url()) . '">' . __( 'View on Twitter.com', 'twitter-tools' ) . '</a>';
+		}
+		return $actions;
+	}
+
 	/**
 	 * Prepends a "settings" link for our plugin on the plugins.php page
 	 *
