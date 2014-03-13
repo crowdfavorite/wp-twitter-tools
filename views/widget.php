@@ -3,7 +3,7 @@
 include('tweet-list.php');
 
 ?>
-	<p class="aktt_more_updates"><a href="<?php echo esc_url(AKTT::profile_url($username)); ?>"><?php _e('Follow Me on Twitter', 'twitter-tools'); ?></a></p>
+	<p class="aktt_more_updates"><a href="<?php echo esc_url(AKTT::profile_url($username)); ?>"><?php echo apply_filters( 'aktt_follow_text', __('Follow Me on Twitter', 'twitter-tools') ); ?></a></p>
 <?php
 if (AKTT::option('credit')) {
 ?>
