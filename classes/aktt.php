@@ -193,6 +193,7 @@ class AKTT {
 				'with_front' => false
 			),
 			'has_archive' => true,
+			'menu_icon' => 'dashicons-twitter',
 		));
 	}
 	
