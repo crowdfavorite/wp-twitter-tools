@@ -145,6 +145,8 @@ Version 3.1 brings support for Social 2.10's CRON action names and requires Soci
 
 == Changelog ==
 
+* (new) Use Twitter icon in admin menu
+
 = 3.1 =
 
 * (new) Requires Social v2.10
