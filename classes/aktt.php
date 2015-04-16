@@ -2,7 +2,7 @@
 
 class AKTT {
 	// settings: aktt_v3_settings
-	static $ver = '3.1';
+	static $ver = '3.1.1';
 	static $enabled = false;
 	static $prefix = 'aktt_';
 	static $post_type = 'aktt_tweet';
@@ -423,7 +423,7 @@ class AKTT {
 	 * @param object $post Post object
 	 * @return array
 	 */
-	function post_row_actions($actions, $post) {
+	static function post_row_actions($actions, $post) {
 		if (isset($post->tweet)) {
 			$actions['view-on-twitter'] = '<a href="' . esc_url($post->tweet->status_url()) . '">' . __( 'View on Twitter.com', 'twitter-tools' ) . '</a>';
 		}
@@ -437,7 +437,7 @@ class AKTT {
 	 * @param string $file -- filename of plugin 
 	 * @return array
 	 */
-	function plugin_action_links($links, $file) {
+	static function plugin_action_links($links, $file) {
 		if (basename($file) == basename(AKTT_FILE)) {
 			$settings_link = '<a href="options-general.php?page='.self::$menu_page_slug.'">'.__('Settings', 'twitter-tools').'</a>';
 			array_unshift($links, $settings_link);
@@ -449,7 +449,7 @@ class AKTT {
 	/**
 	 * Adds a link to the "Settings" menu in WP-Admin.
 	 */
-	public function admin_menu() {
+	public static function admin_menu() {
 		add_options_page(
 			__('Twitter Tools Options', 'twitter-tools'),
 			__('Twitter Tools', 'twitter-tools'),
@@ -875,7 +875,7 @@ class AKTT {
 	 *
 	 * @return void
 	 */
-	function controller(){
+	static function controller(){
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
 				case 'download_account_tweets':
@@ -939,7 +939,7 @@ class AKTT {
 	 *
 	 * @return void
 	 */
-	function admin_controller(){
+	static function admin_controller(){
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
 				case 'manual_tweet_download':
@@ -997,7 +997,7 @@ class AKTT {
 	 * @param string $hook_suffix 
 	 * @return void
 	 */
-	function admin_enqueue_scripts($hook_suffix) {
+	static function admin_enqueue_scripts($hook_suffix) {
 		add_action('admin_footer', array('AKTT', 'admin_js'));
 		if ($hook_suffix == 'settings_page_twitter-tools') {
 			wp_enqueue_script('suggest');
