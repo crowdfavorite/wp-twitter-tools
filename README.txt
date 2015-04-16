@@ -2,8 +2,8 @@
 Contributors: alexkingorg, crowdfavorite
 Tags: twitter, tweet, integration, post, notify, integrate, archive, widget, shortcode, social
 Requires at least: 3.8
-Tested up to: 3.8
-Stable tag: 3.1
+Tested up to: 4.2
+Stable tag: 3.1.1
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -145,7 +145,10 @@ Version 3.1 brings support for Social 2.10's CRON action names and requires Soci
 
 == Changelog ==
 
+= 3.1.1 =
+
 * (new) Use Twitter icon in admin menu
+
 
 = 3.1 =
 
