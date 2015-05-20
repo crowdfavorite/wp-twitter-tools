@@ -755,6 +755,55 @@ class AKTT {
 			}
 		}
 	}
+
+	/**
+	 * Imports old tweets based on settings submitted via the form
+	 *
+	 * @return void
+	 */
+	function import_old_tweets() {
+		$error = false;
+
+		if (empty($_POST['aktt_number_of_tweets']) || !is_numeric($_POST['aktt_number_of_tweets'])) {
+			$error = __('Please enter the number of tweets to download.', 'twitter-tools');
+		}
+		elseif ($_POST['aktt_number_of_tweets'] > 200) {
+			$error = __('Please enter a number under 200. Twitter&#8217;s API limits the download to 200 tweets.', 'twitter-tools');
+		}
+		elseif (empty($_POST['aktt_tweet_id']) || !is_numeric($_POST['aktt_tweet_id'])) {
+			$error = __('Please enter a valid tweet ID.', 'twitter-tools');
+		}
+		elseif (empty($_POST['aktt_account_id']) || !is_numeric($_POST['aktt_account_id'])) {
+			$error = __('Please select an account.', 'twitter-tools');
+		}
+		else {
+			$acct_id = intval($_POST['aktt_account_id']);
+			self::get_social_accounts();
+			if (!isset(self::$accounts[$acct_id])) {
+				$error = __('Account submitted not found.', 'twitter-tools');
+			}
+		}
+
+		if ($error) {
+			echo json_encode(array(
+				'result' => 'error',
+				'msg' => $error
+			));
+			return;
+		}
+
+		$max_id = $_POST['aktt_tweet_id'];
+		$number_of_tweets = $_POST['aktt_number_of_tweets'];
+
+		if ($tweets = self::$accounts[$acct_id]->download_tweets($max_id, $number_of_tweets)) {
+			self::$accounts[$acct_id]->save_tweets($tweets);
+		}
+
+		echo json_encode(array(
+			'result' => 'success',
+			'msg' => __('Tweets downloaded successfully.', 'twitter-tools')
+		));
+	}
 	
 	/**
 	 * Iterates over all the twitter accounts in social and downloads and imports the tweets.
@@ -942,6 +991,15 @@ class AKTT {
 	static function admin_controller(){
 		if (isset($_GET['aktt_action'])) {
 			switch ($_GET['aktt_action']) {
+				case 'old_tweet_download':
+					// Permission & nonce checking
+					if (!check_admin_referer('old_tweet_download') || !current_user_can(self::$cap_download)) { 
+						wp_die(__('Sorry, try again.', 'twitter-tools'));
+					}
+
+					self::import_old_tweets();
+					die();
+					break;
 				case 'manual_tweet_download':
 					// Permission & nonce checking
 					if (!check_admin_referer('manual_tweet_download') || !current_user_can(self::$cap_download)) { 

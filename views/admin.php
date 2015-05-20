@@ -94,6 +94,16 @@ table.form-table .depends-on-create-posts .help {
 .aktt-manual-update-running {
 	margin-left: 10px;
 }
+.aktt-old-tweet-download-result {
+	font-weight: bold;
+}
+.aktt-old-tweet-download-result .error {
+	color: red;
+}
+.aktt-old-tweet-download-spinner {
+	vertical-align: middle;
+	margin-left: 10px;
+}
 </style>
 <div class="wrap" id="<?php echo AKTT::$prefix.'options_page'; ?>">
 	<?php screen_icon(); ?>
@@ -186,13 +196,34 @@ if (AKTT::$enabled) {
 		<input type="submit" class="button-primary" value="<?php _e('Save Settings', 'twitter-tools'); ?>" />
 	</form>
 
-	<h3><?php _e('Download Tweets', 'twitter-tools'); ?></h3>
+	<h3><?php _e('Download Latest Tweets', 'twitter-tools'); ?></h3>
 	<p>
 		<?php _e('Tweets are downloaded automatically every 15 minutes. Can\'t wait?', 'twitter-tools'); ?>
 		<a href="<?php echo esc_url(AKTT::get_manual_update_url()); ?>" class="aktt-manual-update button-secondary"><?php _e('Download Tweets Now', 'twitter-tools'); ?></a>
 		<span class="aktt-manual-update-running"></span>
 		<img alt="" class="aktt-manual-update-request" src="<?php echo admin_url('images/wpspin_light.gif'); ?>">
 	</p>
+
+	<h3><?php _e('Download Old Tweets', 'twitter-tools'); ?></h3>
+	<form action="<?php echo add_query_arg( 'aktt_action', 'old_tweet_download', admin_url('index.php') ); ?>" method="post" class="aktt-old-tweet-download">
+	<?php wp_nonce_field('old_tweet_download'); ?>
+	Import the
+	<input type="number" name="aktt_number_of_tweets" value="20" style="width: 50px;" />
+	tweets posted <strong>before</strong> tweet #
+	<input type="number" size="15" name="aktt_tweet_id" placeholder="Tweet ID" />
+	for account
+	<select name="aktt_account_id">
+	<option value="">- Select an Account -</option>
+	<?php
+	foreach (self::$accounts as $account) {
+		printf( '<option value="%s">%s</option>', $account->id, esc_html($account->social_acct->name()));
+	}
+	?>
+	</select>
+	<button class="button-secondary" type="submit" style="vertical-align:middle;">Go</button>
+	<img style="display: none;" alt="" class="aktt-old-tweet-download-spinner" src="<?php echo admin_url('images/wpspin_light-2x.gif'); ?>" width="16" height="16">
+	</form>
+	<div class="aktt-old-tweet-download-result"></div>
 
 <?php
 }
@@ -262,6 +293,24 @@ jQuery(function($) {
 			},
 			'json'
 		);
+	});
+	$('.aktt-old-tweet-download').submit(function(e) {
+		e.preventDefault();
+				
+		var $spinner = $('.aktt-old-tweet-download-spinner'),
+			$result = $('.aktt-old-tweet-download-result');
+		
+		$spinner.show();
+		$result.hide();
+
+		var $form = $(this),
+			data = $form.serialize();
+			url = $form.attr('action');
+		$.post(url, data, function (response) {
+			var message = '<p class="' + response.result + '">' + response.msg + '</p>';
+			$spinner.hide();
+			$result.html(message).fadeIn();
+		}, 'json');
 	});
 });
 </script>
