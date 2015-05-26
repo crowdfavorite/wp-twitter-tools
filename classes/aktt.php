@@ -1053,7 +1053,7 @@ jQuery(function($) {
 <?php
 	}
 	
-	function log($msg) {
+	static function log($msg) {
 		if (self::$debug) {
 			error_log($msg);
 		}
