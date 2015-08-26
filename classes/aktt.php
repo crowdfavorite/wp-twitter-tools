@@ -115,6 +115,17 @@ class AKTT {
 					'0' => __('No', 'twitter-tools')
 				),
 			),
+			'image_placement' => array(
+				'name' => 'image_placement',
+				'value' => 0,
+				'label' => __('Image placement in posts', 'twitter-tools'),
+				'type' => 'radio',
+				'options' => array(
+					'0' => __('In post content and as featured image (default)', 'twitter-tools'),
+					'1' => __('Only in post content', 'twitter-tools'),
+					'2' => __('Only as featured image', 'twitter-tools'),
+				),
+			),
 			'credit' => array(
 				'name' => 'credit',
 				'value' => 1,
@@ -395,7 +406,7 @@ class AKTT {
 				$post->tweet = new AKTT_Tweet(json_decode($raw_data));
 				$post->post_content = $post->tweet->link_entities();
 			}
-			if (has_post_thumbnail($post->ID)) {
+			if (has_post_thumbnail($post->ID) && (self::option('image_placement') == 0 || self::option('image_placement') == 1)) {
 				$size = apply_filters('aktt_featured_image_size', 'medium');
 				$post->post_content .= "\n\n".get_the_post_thumbnail(null, $size);
 			}
