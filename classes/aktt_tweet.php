@@ -520,7 +520,7 @@ class AKTT_Tweet {
 
 		// if there is a photo, add it
 		$this->featured_image_id = $this->sideload_image();
-		if (!empty($this->featured_image_id)) {
+		if (!empty($this->featured_image_id) && (AKTT::option('image_placement') == 0 || AKTT::option('image_placement') == 2)) {
 			update_post_meta($this->post_id, '_thumbnail_id', $this->featured_image_id);
 		}
 		
@@ -569,7 +569,7 @@ class AKTT_Tweet {
 
 		$post_content = $this->link_entities(false);
 		// Append image to post if there is one, can't set it as a featured image until after save
-		if (!empty($this->featured_image_id)) {
+		if (!empty($this->featured_image_id) && (AKTT::option('image_placement') == 0 || AKTT::option('image_placement') == 1)) {
 			$size = apply_filters('aktt_featured_image_size', 'medium');
 			$post_content .= "\n\n".wp_get_attachment_image($this->featured_image_id, $size);
 		}
@@ -617,7 +617,7 @@ class AKTT_Tweet {
 			set_post_format($this->blog_post_id, $post_format);
 		}
 		
-		if (!empty($this->featured_image_id)) {
+		if (!empty($this->featured_image_id) && (AKTT::option('image_placement') == 0 || AKTT::option('image_placement') == 2)) {
 			update_post_meta($this->blog_post_id, '_thumbnail_id', $this->featured_image_id);
 		}
 
